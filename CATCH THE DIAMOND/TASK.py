@@ -39,8 +39,6 @@ def convert_coordinate(x,y):
     y_cor = (W_Height - 2*y)/W_Height
     return [x_cor, y_cor]
 
-
-
 def midpoint_line_draw(p1, p2):
 
     dx = p2[0] - p1[0]
@@ -92,7 +90,7 @@ def midpoint_line_draw(p1, p2):
     dy = p2[1] - p1[1]
 
     d = 2 * dy - dx
-    inc = 0.000001
+    inc = 0.0001
 
     point_list = [p1]
 
@@ -216,13 +214,10 @@ glutInitWindowPosition(0, 0)
 glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB)
 glutCreateWindow(b"CATCH THE DIAMOND")
 
-
 start()
-
 
 glutDisplayFunc(showStuff)
 # glutIdleFunc(movement)
 # glutSpecialFunc(windEffect)
 # glutKeyboardFunc(dayNight)
-
 glutMainLoop()
