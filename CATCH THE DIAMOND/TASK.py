@@ -1,6 +1,7 @@
 import random
 from calendar import firstweekday
-
+import pygame
+from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -8,17 +9,32 @@ import math
 
 
 
-W_Width, W_Height = 800, 1000
+W_Width, W_Height = 400, 700
 diamond = None
 catcher = None
+score = 0
+Game_On = True
+Diamond_caught = False
 
 class Diamond:
     size = 0.02
     def __init__(self, x,y):
         self.x = x
         self.y = y
-        self.points = [[self.x, self.y], [self.x+1.5*Diamond.size, self.y-3*Diamond.size], [self.x, self.y-6*Diamond.size], [self.x-1.5*Diamond.size, self.y-3*Diamond.size]]
+        self.points = [[self.x, self.y],
+                       [self.x+1.5*Diamond.size, self.y-3*Diamond.size], 
+                       [self.x, self.y-6*Diamond.size], 
+                       [self.x-1.5*Diamond.size, self.y-3*Diamond.size]]
         self.color = (random.uniform(0,1),random.uniform(0,1), random.uniform(0,1))
+
+    def setPoints(self, x, y):
+        self.x = x
+        self.y = y
+        self.points = [[self.x, self.y],
+                       [self.x+1.5*Diamond.size, self.y-3*Diamond.size], 
+                       [self.x, self.y-6*Diamond.size], 
+                       [self.x-1.5*Diamond.size, self.y-3*Diamond.size]]
+
 
 class Catcher:
     size = 0.1
@@ -27,9 +43,19 @@ class Catcher:
         self.y = y
         self.points = [[self.x, self.y],
                        [self.x + 5*Catcher.size, self.y],
-                       [self.x+0.1, self.y -  0.5*Catcher.size],
-                       [self.x+0.1 + 3 * Catcher.size, self.y - 0.5*Catcher.size]]
+                       [self.x+0.1 + 3 * Catcher.size, self.y - 0.5*Catcher.size],
+                       [self.x+0.1, self.y -  0.5*Catcher.size]
+                       ]
         self.color = (1,1,1)
+
+    def setPoints(self, x, y):
+        self.x = x
+        self.y = y
+        self.points = [[self.x, self.y],
+                       [self.x + 5*Catcher.size, self.y],
+                       [self.x+0.1 + 3 * Catcher.size, self.y - 0.5*Catcher.size],
+                       [self.x+0.1, self.y -  0.5*Catcher.size]
+                       ]
 
 
 
@@ -164,36 +190,61 @@ def draw(p1, p2, obj1):
         glVertex2d(i[0], i[1])
     glEnd()
 
+def diamond_fall():
+    global diamond, catcher
+    d1 = diamond
+    c1 = catcher
+    step_size = 0.008
+    if d1.points[3][1] >=  -0.80:
+        d1.setPoints(d1.x, d1.y-step_size)
+    
+    else:
+        d1.setPoints(random.uniform(-0.75,0.75), 0.75)
+        Diamond_caught = False
+    glutPostRedisplay() 
 
 
+def catcher_move(key, x, y):
+    global catcher
+    c1 = catcher
+    step_size = 0.08
+    if key == GLUT_KEY_LEFT and c1.x > -1:
+        c1.setPoints(c1.x - step_size, c1.y)
+    elif key == GLUT_KEY_RIGHT and c1.x+0.5 < 1:
+        c1.setPoints(c1.x + step_size, c1.y)
+    glutPostRedisplay() 
 
-def draw_diamond(d1):
-    for i in range(len(d1.points)):
-        draw(d1.points[i%len(d1.points)], d1.points[(i+1)%len(d1.points)], d1)
-
-def draw_catcher(catcher):
-    points = [[catcher.points[0],catcher.points[1]],
-              [catcher.points[0],catcher.points[2]],
-              [catcher.points[2],catcher.points[3]],
-              [catcher.points[3],catcher.points[1]]]
-
-    for i in range(len(points)):
-        draw(points[i][0], points[i][1], catcher)
-
+def draw_shape(obj):
+    for i in range(len(obj.points)):
+        draw(obj.points[i%len(obj.points)], obj.points[(i+1)%len(obj.points)], obj)
+       
 
 def game_init():
     global diamond, catcher
     diamond = Diamond(random.uniform(-0.75,0.75), 0.75)
-    catcher = Catcher(random.uniform(-0.75, 0.75), -0.85)
+    catcher = Catcher(random.uniform(-1, 0.5), -0.85)
 
 
 
 def showStuff():
-    global diamond, catcher
+    global diamond, catcher, score, Game_On, Diamond_caught
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
-    draw_diamond(diamond)
-    draw_catcher(catcher)
+    draw_shape(diamond)
+    draw_shape(catcher)
+    d1 = diamond
+    c1 = catcher
+    if not Diamond_caught and d1.points[2][1] <= c1.y:
+        if d1.points[2][0] <= c1.points[0][0] or d1.points[2][0] > c1.points[1][0]:
+            Game_On = False
+            print(Game_On)
+        
+        else:
+            score += 1
+            print(score)
+            print(Game_On)
+    
+        Diamond_caught = True
     glutSwapBuffers()
 
 
@@ -217,7 +268,7 @@ glutCreateWindow(b"CATCH THE DIAMOND")
 start()
 
 glutDisplayFunc(showStuff)
-# glutIdleFunc(movement)
-# glutSpecialFunc(windEffect)
+glutIdleFunc(diamond_fall)
+glutSpecialFunc(catcher_move)
 # glutKeyboardFunc(dayNight)
 glutMainLoop()
