@@ -1,10 +1,10 @@
 import random
+from game_console import init_console, update_console
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import os
-import pygame
+import sys
 
 
 W_Width, W_Height = 400, 700
@@ -16,51 +16,6 @@ Play_Pause = "Pause"
 Diamond_caught = False
 Diamond_fallRate =  0.008
 
-
-def init_console():
-    pygame.init()
-    console_window = pygame.display.set_mode((400, 700))
-    pygame.display.set_caption("CTD")
-    return console_window
-
-
-def update_console(console_window, score, Game_on, Terminate = False, Reset = False):
-    console_window.fill((0,0,0))
-    font = pygame.font.SysFont("Courier", 18)
-    y = 20
-
-    if not Game_on and score == 0:
-        y += 18
-        score_surface = font.render(f"Game Over! Score: {score}", True,  (255,255,255))
-        console_window.blit(score_surface, (50,y))
-
-    for i in range(1, score+1):
-        score_surface = font.render(f"Score: {i}", True, (255,255,255))
-        console_window.blit(score_surface, (50,y))
-        
-        if Game_on == False and i == score:
-            y += 18
-            score_surface = font.render(f"Game Over! Score: {score}", True,  (255,255,255))
-            console_window.blit(score_surface, (50,y))
-    
-        y += 20
-    
-
-    if Terminate:
-        y += 18
-        score_surface = font.render(f"Goodbye! Score: {score}", True,  (255,255,255))
-        console_window.blit(score_surface, (50,y))
-    
-    if Reset:
-        y += 18
-        score_surface = font.render(f"Starting Over!", True,  (255,255,255))
-        console_window.blit(score_surface, (50,y))
-    
-    pygame.display.update()
-
-
-
-console_window = init_console()
 
 
 class Diamond:
@@ -357,11 +312,11 @@ def mouse_handler(btn, state, x, y):
                 Play_Pause = 'Pause'
             
             elif 0.75 < x < 0.85 and 0.75 < y < 0.85 and Play_Pause == 'Pause':
-                update_console(console_window, score, Game_On, Terminate = True)
-                os._exit()
+                print(f"Goodbye! Score: {score}")
+                glutLeaveMainLoop() 
             
             elif -0.9 < x < -0.7 and 0.75 < y < 0.85 and Play_Pause == 'Pause':
-                update_console(console_window, score, Game_On, Reset = True)
+                print("Starting Over!")
                 score = 0
                 Game_On = True
                 Play_Pause = "Pause"
@@ -397,14 +352,14 @@ def showStuff():
         if d1.points[2][0] <= c1.points[0][0] or d1.points[2][0] > c1.points[1][0]:
             Game_On = False
             c1.setColor(1,0,0)
-            update_console(console_window, score, Game_On)
+            print(f'Game Over! Score: {score}')
             
             
         
         else:
             score += 1
             Game_On = True
-            update_console(console_window, score, Game_On) 
+            print(f"Score: {score}")
             d1.setColor()
             Diamond_fallRate +=  0.002  
         Diamond_caught = True
