@@ -20,7 +20,7 @@ Diamond_fallRate =  0.008
 def init_console():
     pygame.init()
     console_window = pygame.display.set_mode((400, 700))
-    pygame.display.set_caption("CTD")
+    pygame.display.set_caption("Catch The Diamond")
     return console_window
 
 
@@ -72,7 +72,7 @@ class Diamond:
                        [self.x+1.5*Diamond.size, self.y-3*Diamond.size], 
                        [self.x, self.y-6*Diamond.size], 
                        [self.x-1.5*Diamond.size, self.y-3*Diamond.size]]
-        self.color = (random.uniform(0,1),random.uniform(0,1), random.uniform(0,1))
+        self.color = (random.uniform(0.4,1),random.uniform(0.4,1), random.uniform(0.4,1))
         
 
     def setPoints(self, x, y):
