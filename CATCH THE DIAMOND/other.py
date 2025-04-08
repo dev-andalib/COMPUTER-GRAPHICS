@@ -279,9 +279,9 @@ def catcher_move(key, x, y):
     if Play_Pause == "Play":
         step_size = 0
         
-    if key == GLUT_KEY_LEFT and c1.x > -1:
+    if key == GLUT_KEY_LEFT and c1.x > -0.92:
         c1.setPoints(c1.x - step_size, c1.y)
-    elif key == GLUT_KEY_RIGHT and c1.x+0.5 < 1:
+    elif key == GLUT_KEY_RIGHT and c1.x+0.5 < 0.92:
         c1.setPoints(c1.x + step_size, c1.y)
     glutPostRedisplay() 
 
