@@ -39,6 +39,7 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
 def draw_shapes():
 
     glPushMatrix()  # Save the current matrix state
+    
     glColor3f(1, 0, 0)
     glTranslatef(0, 0, 0)  
     glutSolidCube(60) # Take cube size as the parameter
@@ -154,10 +155,10 @@ def showScreen():
     - Clears the screen and sets up the camera.
     - Draws everything of the screen
     """
-    # Clear color and depth buffers
+  
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()  # Reset modelview matrix
-    glViewport(0, 0, 1000, 800)  # Set viewport size
+    glLoadIdentity()
+    glViewport(0, 0, 1000, 800)
 
     setupCamera()  # Configure camera perspective
 
@@ -204,21 +205,19 @@ def showScreen():
     glutSwapBuffers()
 
 
-# Main function to set up OpenGL window and loop
+
 def main():
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
-    glutInitWindowSize(1000, 800)  # Window size
-    glutInitWindowPosition(0, 0)  # Window position
-    wind = glutCreateWindow(b"3D OpenGL Intro")  # Create the window
-
-    glutDisplayFunc(showScreen)  # Register display function
-    glutKeyboardFunc(keyboardListener)  # Register keyboard listener
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH) 
+    glutInitWindowSize(1000, 800) 
+    glutInitWindowPosition(0, 0)  
+    glutCreateWindow(b"SHOOT ENEMIES")  
+    glutDisplayFunc(showScreen)  
+    glutKeyboardFunc(keyboardListener) 
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
-    glutIdleFunc(idle)  # Register the idle function to move the bullet automatically
-
-    glutMainLoop()  # Enter the GLUT main loop
+    glutIdleFunc(idle) 
+    glutMainLoop()  
 
 if __name__ == "__main__":
     main()
