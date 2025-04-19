@@ -3,10 +3,10 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 # Camera-related variables
-camera_pos = (0,500,400)
+camera_pos = (0,500,500)
 
-fovY = 150  # Field of view
-grid_length = 50  # Length of grid lines
+fovY = 120  # Field of view
+length = 50  # Length of grid lines
 rand_var = 423
 
 
@@ -149,56 +149,10 @@ def idle():
     # Ensure the screen updates with the latest changes
     glutPostRedisplay()
 
-def draw_tile(x, y):
-    start = [x, y]
-    glVertex3f(start[0], start[1], 0)
-    glVertex3f(start[0]+grid_length, start[1], 0)
-    glVertex3f(start[0]+grid_length, start[1]+grid_length, 0)
-    glVertex3f(start[0], start[1]+grid_length, 0)
-
-def draw_boundary(i, cor):
-    glBegin(GL_QUADS)
-    for j in range(len(cor)):
-            if i == 0:
-                color = (1.0, 0.0, 0.0)
-                glColor3f(color[0], color[1], color[2])
-                x = cor[j][0]
-                y = cor[j][1]
-                z = cor[j][2]    
-                glVertex3f(x, y, z)
-                
-            
-            elif i == 1:
-                color = (0.0, 1.0, 0.0)
-                glColor3f(color[0], color[1], color[2])
-                x = cor[j][0]
-                y = cor[j][1]
-                z = cor[j][2]    
-                glVertex3f(x, y, z)
-               
-            
-            elif i == 2:
-                color = (0.0, 0.0, 1.0)
-                glColor3f(color[0], color[1], color[2])
-                x = cor[j][0]
-                y = cor[j][1]
-                z = cor[j][2]    
-                glVertex3f(x, y, z)
-                
-            
-            elif i == 3:
-                color = (1.0, 1.0, 0.0)
-                glColor3f(color[0], color[1], color[2])
-                x = cor[j][0]
-                y = cor[j][1]
-                z = cor[j][2]     
-                glVertex3f(x, y, z)
-                
-
-    glEnd()
 
 def showScreen():
-    global grid_length
+    global length
+    grid_length = length
   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
@@ -212,15 +166,19 @@ def showScreen():
     
     
     
-    # draw grids
-    start = [-275,-10]
+    
+    
+    start = [-265,40]
     temp = start.copy()
     for i in range(13):
         for j in range(13):
             if j%2 == 0 and i%2 == 0:
                 glBegin(GL_QUADS)
                 glColor3f(1, 1, 1)
-                draw_tile(start[0], start[1])
+                glVertex3f(start[0], start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1]+grid_length, 0)
+                glVertex3f(start[0], start[1]+grid_length, 0)
                 glEnd()
                 start[0] += 50
             
@@ -228,7 +186,10 @@ def showScreen():
             elif j%2 != 0 and i%2 == 0:
                 glBegin(GL_QUADS)
                 glColor3f(0.7, 0.5, 0.95)
-                draw_tile(start[0], start[1])
+                glVertex3f(start[0], start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1]+grid_length, 0)
+                glVertex3f(start[0], start[1]+grid_length, 0)
                 glEnd()
                 start[0] += 50
             
@@ -236,7 +197,10 @@ def showScreen():
             elif j%2 == 0 and i%2 != 0:
                 glBegin(GL_QUADS)
                 glColor3f(0.7, 0.5, 0.95)
-                draw_tile(start[0], start[1])
+                glVertex3f(start[0], start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1]+grid_length, 0)
+                glVertex3f(start[0], start[1]+grid_length, 0)
                 glEnd()
                 start[0] += 50
             
@@ -244,28 +208,32 @@ def showScreen():
             elif j%2 != 0 and i%2 != 0:
                 glBegin(GL_QUADS)
                 glColor3f(1,1,1)
-                draw_tile(start[0], start[1])
+                glVertex3f(start[0], start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1], 0)
+                glVertex3f(start[0]+grid_length, start[1]+grid_length, 0)
+                glVertex3f(start[0], start[1]+grid_length, 0)
                 glEnd()
                 start[0] += 50
-
-
         start[1] += grid_length
         start[0] = temp[0]     
    
-    
-    #boundary
-    height = grid_length
     boundary = [
                  [[-275,-10, 0],[-275,-10, height],[375, -10, height],[375, -10, 0]], 
                  [[-275,-10, 0],[-275,-10, height],[-275, 640, height],[-275, 640, 0]], 
                  [[375,-10, 0],[375,-10, height],[375, 640, height],[375, 640, 0]], 
                  [[-275,640, 0],[-275,640, height],[375, 640, height],[375, 640, 0]]
                ]
-    for i in range(len(boundary)):
-        draw_boundary(i, boundary[i])
-
-
     
+    for i in boundary:
+        glBegin(GL_QUADS)
+        glColor3f(0.75,0.75,0.75)
+        for j in i:
+            x = j[0] 
+            y = j[1]
+            z = j[2]
+            glVertex3f(x, y, z)
+        glEnd()
+
     # Display game info text at a fixed screen position
     
 
