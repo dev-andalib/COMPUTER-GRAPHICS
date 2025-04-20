@@ -2,12 +2,21 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
-# Camera-related variables
-camera_pos = (0,500,400)
+
 
 fovY = 150  # Field of view
 grid_length = 50  # Length of grid lines
-rand_var = 423
+
+
+#man object
+man = {
+    "head" : {"create": [20, 10, 10], "color": (0, 0, 0), "position": [
+        50, 320, 50]},
+    "body" : {"create": 30, "color" : (0,1,0), "position" :[50, 320, 30]},
+    "legs" : [],
+    "arms" : [],
+    "gun"  : [],
+}
 
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
@@ -133,8 +142,9 @@ def setupCamera():
     glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
     glLoadIdentity()  # Reset the model-view matrix
 
-    # Extract camera position and look-at target
-    x, y, z = camera_pos
+    # Extract camera pos
+    # ition and look-at target
+    x, y, z = (0,400,200)
     # Position the camera and set its orientation
     gluLookAt(x, y, z,  # Camera position
               0, 0, 0,  # Look-at target
@@ -197,6 +207,30 @@ def draw_boundary(i, cor):
 
     glEnd()
 
+def draw_man():
+    global man
+    glPushMatrix()
+    # head drawing
+    r, g, b = man["head"]["color"]
+    glColor3f(r,g,b)
+    pos = man["head"]["position"]
+    glTranslatef(pos[0], pos[1], pos[2])
+    r,s,st = man["head"]["create"]
+    gluSphere(gluNewQuadric(), r, s, st)
+    glPopMatrix()
+
+    # body drawing
+    glPushMatrix()
+    size = man["body"]["create"]
+    r, g, b = man['body']['color']
+    pos = man["body"]["position"]
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glColor3f(r,g,b)
+    glutSolidCube(size) 
+    glPopMatrix()
+
+
+
 def showScreen():
     global grid_length
   
@@ -208,12 +242,12 @@ def showScreen():
 
    
 
-    # Draw the grid (game floor)
+    
     
     
     
     # draw grids
-    start = [-275,-10]
+    start = [-275,0]
     temp = start.copy()
     for i in range(13):
         for j in range(13):
@@ -254,7 +288,7 @@ def showScreen():
    
     
     #boundary
-    height = grid_length
+    height = grid_length * 1.5
     boundary = [
                  [[-275,-10, 0],[-275,-10, height],[375, -10, height],[375, -10, 0]], 
                  [[-275,-10, 0],[-275,-10, height],[-275, 640, height],[-275, 640, 0]], 
@@ -265,10 +299,9 @@ def showScreen():
         draw_boundary(i, boundary[i])
 
 
+    #man
     
-    # Display game info text at a fixed screen position
-    
-
+    draw_man()
     
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
