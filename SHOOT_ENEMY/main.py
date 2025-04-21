@@ -2,7 +2,7 @@ import copy
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import random
+import random, math
 
 
 fovY = 150  # How wide the camera can see in vertical direction
@@ -56,29 +56,43 @@ man = {
                "color": (0.251, 0.251, 0.251),
                "position" : [50 , 310, 45] ,  
                "rotation": [90, 1, 0, 0] },
+
+    "theta" : math.radians(-90),  # for movement direction
+    "rot_theta" : 0, # angle of rotation about z-axis
 }
 
+
+
 # enemy object
-
-
 enemy = {
-    "head" : {"create": [20, 10, 10], 
+    "head" : {"create": [10, 10, 10], 
               "color": (0.251, 0.251, 0.251), 
-              "position": [50, 320, 80]},
+              "position": [50, 320, 50]},
 
 
-    "body" : {"create": [50, 100, 100], 
+    "body" : {"create": [25, 100, 100], 
               "color": (1, 0, 0), 
-              "position": [50, 320, 80-20-25]},
+              "position": [50, 320, 50-10-12]},
 }
 
 enemy_list = []
 
 
 #camera position
-camera_pos = [50, -200, 100] 
-camera_center = [50, 320, 50] 
+camera_pos = [50, 100, 200] 
+camera_center = [50, 120, 50] 
+
+
+#movement
 step_size = 5
+h_max = 100
+h_min = 0
+x_max = 375
+x_min = -275
+y_max = 640
+y_min = -9
+
+
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     pass
@@ -131,28 +145,91 @@ def draw_shapes():
     # glPopMatrix()  # Restore the previous matrix state
 
 
+
+
 def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
 
-    global camera_pos, step_size
+    global man, step_size,  x_max , x_min , y_max , y_min 
     
-    z = camera_pos[2]
+    
     
     # Move forward (W key)
-    if key == b'w':  
-       z += step_size 
+    if key == b'w':
+       x = step_size * math.cos(man["theta"])
+       y = step_size * math.sin(man["theta"])
+       new_x = man["head"]["position"][0] + x
+       new_y = man["head"]["position"][1] + y
+
+       if new_x < x_min + 10 or new_x > x_max - 10 and new_y < y_min + 10 or new_y > y_max - 10:
+           x = 0
+           y = 0
+
+       man["head"]["position"][0] += x 
+       man["head"]["position"][1] += y
+
+       
+       man["body"]["position"][0] += x
+       man["body"]["position"][1] += y
+
+       for a in man["arms"]:
+           a["position"][0] += x 
+           a["position"][1] += y
+
+       for l in man["legs"]:
+           l["position"][0] += x
+           l["position"][1] += y
+
+       man["gun"]["position"][0] += x
+       man["gun"]["position"][1] += y
+
+
 
     # Move backward (S key)
     if key == b's':
-       z -= step_size
+       x = step_size * math.cos(man["theta"])
+       y = step_size * math.sin(man["theta"])
+       new_x = man["head"]["position"][0] - x
+       new_y = man["head"]["position"][1] - y
 
-    # # Rotate gun left (A key)
-    # if key == b'a':
+       if new_x < x_min + 10 or new_x > x_max - 10 and new_y < y_min + 10 or new_y > y_max - 10:
+           x = 0
+           y = 0
 
-    # # Rotate gun right (D key)
-    # if key == b'd':
+       man["head"]["position"][0] -= x  
+       man["head"]["position"][1] -= y
+
+       man["body"]["position"][0] -= x
+       man["body"]["position"][1] -= y
+
+       for a in man["arms"]:
+           a["position"][0] -= x
+           a["position"][1] -= y
+
+       for l in man["legs"]:
+           l["position"][0] -= x
+           l["position"][1] -= y
+
+       man["gun"]["position"][0] -= x
+       man["gun"]["position"][1] -= y
+
+
+    # Rotate gun left (A key)
+    if key == b'a':
+        man["rot_theta"] -= step_size 
+        man["rot_theta"] %= 360
+        man["theta"] = math.radians(man["rot_theta"] - 90)
+        
+  
+        
+
+    # Rotate gun right (D key)
+    if key == b'd':
+        man["rot_theta"] += step_size  
+        man["rot_theta"] %= 360
+        man["theta"] = math.radians(man["rot_theta"] - 90)
 
     # # Toggle cheat mode (C key)
     # if key == b'c':
@@ -162,7 +239,7 @@ def keyboardListener(key, x, y):
 
     # # Reset the game if R key is pressed
     # if key == b'r':
-    camera_pos[2] = z
+    
 
 def specialKeyListener(key, x, y):
     """
@@ -200,8 +277,7 @@ def mouseListener(button, state, x, y):
 
         # # Right mouse button toggles camera tracking mode
         # if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
-    print(x, y)
-
+    
 def setupCamera():
     """
     Configures the camera's projection and view settings.
@@ -212,7 +288,7 @@ def setupCamera():
                          # aspect ration (W/H), object 
                          # closer than 0.1 are not visible
                          # farther than 1500 are not visible
-    gluPerspective(fovY, 1.25, 0.1, 1500) 
+    gluPerspective(fovY, 1.47, 0.1, 1500) 
 
     glMatrixMode(GL_MODELVIEW) # move or rotate object  
     glLoadIdentity()  
@@ -234,11 +310,28 @@ def setupCamera():
 
 
 def idle():
-    """
-    Idle function that runs continuously:
-    - Triggers screen redraw for real-time updates.
-    """
-    # Ensure the screen updates with the latest changes
+    global enemy_list, man
+    step_size = 0.1
+    hx = man['head']['position'][0]
+    hy = man['head']['position'][1]
+    for i in enemy_list:
+        x = i["head"]["position"][0]
+        y = i["head"]["position"][1]
+
+        if hx > x:
+            i["head"]["position"][0] += random.uniform(0, step_size)
+            i["body"]["position"][0] += random.uniform(0, step_size)
+        elif hx < x:
+            i["head"]["position"][0] -= random.uniform(0, step_size)
+            i["body"]["position"][0] -= random.uniform(0, step_size)
+        
+        if hy > y:
+            i["head"]["position"][1] += random.uniform(0, step_size)
+            i["body"]["position"][1] += random.uniform(0, step_size)
+        elif hy < y:
+            i["head"]["position"][1] -= random.uniform(0, step_size)
+            i["body"]["position"][1] -= random.uniform(0, step_size)
+
     glutPostRedisplay()
 
 def draw_tile(x, y):
@@ -289,9 +382,18 @@ def draw_boundary(i, cor):
 
     glEnd()
 
+
 def draw_man():
     global man
     
+    #rotate as a whole
+    glPushMatrix()
+    body_pos = man["body"]["position"]
+    center = body_pos[2] - (man["body"]["create"][2] / 2)  # base center of the cube
+    
+    glTranslatef(body_pos[0], body_pos[1], center)
+    glRotatef(man["rot_theta"], 0, 0, 1)
+    glTranslatef(-body_pos[0], -body_pos[1], -center)
     #arms 
 
     #right
@@ -320,17 +422,7 @@ def draw_man():
     glPopMatrix()
 
 
-    #gun
-    glPushMatrix()
-    r, g, b = man['gun']['color']
-    pos = man["gun"]["position"]
-    rot = man["gun"]["rotation"] 
-    glTranslatef(pos[0], pos[1], pos[2]) 
-    glRotatef(rot[0], rot[1], rot[2], rot[3])
-    glColor3f(r,g,b)
-    l = man["gun"]
-    gluCylinder(gluNewQuadric(),  l["create_base"], l["create_top"], l["height"], 10, 10 )  
-    glPopMatrix()
+
 
 
     #legs 
@@ -375,6 +467,17 @@ def draw_man():
     glutSolidCube(size) 
     glPopMatrix()
 
+    #gun
+    glPushMatrix()
+    r, g, b = man['gun']['color']
+    pos = man["gun"]["position"]
+    rot = man["gun"]["rotation"] 
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(rot[0], rot[1], rot[2], rot[3])
+    glColor3f(r,g,b)
+    l = man["gun"]
+    gluCylinder(gluNewQuadric(),  l["create_base"], l["create_top"], l["height"], 10, 10 )  
+    glPopMatrix()
 
     # head drawing
     glPushMatrix()
@@ -385,8 +488,7 @@ def draw_man():
     r,s,st = man["head"]["create"]
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
-
-
+    glPopMatrix()
 
 
 
@@ -416,12 +518,8 @@ def draw_enemy(i):
     return enemy
 
 
-
-
-
-
 def enemy_creation(x_min, x_max, y_min, y_max):
-    global enemy, enemy_list, stat
+    global enemy, enemy_list, stat, man
     
     
     for i in range(5):
@@ -429,6 +527,10 @@ def enemy_creation(x_min, x_max, y_min, y_max):
 
         x = random.uniform(x_min + r, x_max - r)
         y = random.uniform(y_min + r, y_max - r)
+        if man["head"]["position"][0] == x and man["head"]["position"][1] == y:
+            x = random.uniform(x_min + r, x_max - r)
+            y = random.uniform(y_min + r, y_max - r)
+        
 
         enemy["body"]["position"][0] = x
         enemy["body"]["position"][1] = y
@@ -443,12 +545,14 @@ def enemy_creation(x_min, x_max, y_min, y_max):
             
 
 
+    
+
 def showScreen():
-    global grid_length, enemy_list, stat
+    global grid_length, enemy_list, stat , h_max , h_min , x_max , x_min , y_max , y_min 
   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    glViewport(0, 0, 1000, 800)
+    glViewport(0, 0, 1000, 680)
 
     setupCamera()   
     
@@ -496,12 +600,7 @@ def showScreen():
    
     
     #boundary
-    h_max = 100
-    h_min = 0
-    x_max = 375
-    x_min = -275
-    y_max = 640
-    y_min = -9
+    
     boundary = [
                  [[x_min,y_min, h_min],[x_min,y_min, h_max],[x_max, y_min, h_max],[x_max, y_min, h_min]], 
                  [[x_min,y_min, h_min],[x_min,y_min, h_max],[x_min, y_max, h_max],[x_min, y_max, h_min]], 
@@ -513,7 +612,7 @@ def showScreen():
     
     
     #man
-    # draw_man()
+    draw_man()
 
 
     #enemy
