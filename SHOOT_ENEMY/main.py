@@ -34,22 +34,27 @@ man = {
                "position" : [50 - 8, 320, 45 - 15 - 10] }],
 
 
-    "arms" : [{"create_base": 8,
-               "create_top": 6,
+    "arms" : [{"create_base": 5,
+               "create_top": 2,
                "height": 40,
                "color": (0, 0, 0),
-               "position" : [50 + 18, 280, 45] ,  
-               "rotation": [90, 0, 0, 0] },
+               "position" : [50 + 20 , 320, 45] ,  
+               "rotation": [90, 1, 0, 0] },
 
-              { "create_base": 8,
-                "create_top": 6,
+              { "create_base": 5,
+                "create_top": 2,
                 "height": 40,
                 "color": (0, 0, 0),
-                "position" : [50 - 18, 280, 45] ,
-                "rotation": [90, 0, 0, 0]}],
+                "position" : [50 - 20, 320, 45] ,
+                "rotation": [90, 1, 0, 0]}],
 
 
-    "gun"  : [],
+    "gun"  : {"create_base": 5,
+               "create_top": 5,
+               "height": 60,
+               "color": (0.251, 0.251, 0.251),
+               "position" : [50 , 310, 45] ,  
+               "rotation": [90, 1, 0, 0] },
 }
 
 
@@ -270,6 +275,47 @@ def draw_boundary(i, cor):
 def draw_man():
     global man
     
+    #arms 
+
+    #right
+    glPushMatrix()
+    r, g, b = man['arms'][0]['color']
+    pos = man["arms"][0]["position"]
+    glTranslatef(pos[0], pos[1], pos[2])
+    rot = man["arms"][0]["rotation"] 
+    glRotatef(rot[0], rot[1], rot[2], rot[3])
+    glColor3f(r,g,b)
+    l = man["arms"][0]
+    gluCylinder(gluNewQuadric(),   l["create_base"], l["create_top"], l["height"], 10, 10 )  
+    glPopMatrix()
+
+
+    #left
+    glPushMatrix()
+    r, g, b = man['arms'][1]['color']
+    pos = man["arms"][1]["position"]
+    rot = man["arms"][1]["rotation"] 
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(rot[0], rot[1], rot[2], rot[3])
+    glColor3f(r,g,b)
+    l = man["arms"][1]
+    gluCylinder(gluNewQuadric(),  l["create_base"], l["create_top"], l["height"], 10, 10 )  
+    glPopMatrix()
+
+
+    #gun
+    glPushMatrix()
+    r, g, b = man['gun']['color']
+    pos = man["gun"]["position"]
+    rot = man["gun"]["rotation"] 
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(rot[0], rot[1], rot[2], rot[3])
+    glColor3f(r,g,b)
+    l = man["gun"]
+    gluCylinder(gluNewQuadric(),  l["create_base"], l["create_top"], l["height"], 10, 10 )  
+    glPopMatrix()
+
+
     #legs 
 
     #right
@@ -324,32 +370,6 @@ def draw_man():
     glPopMatrix()
 
 
-    #arms
-    # right arm
-    glPushMatrix()
-    r, g, b = man['arms'][0]['color']
-    pos = man["arms"][0]["position"]
-    rot = man["arms"][0]["rotation"]
-    glTranslatef(pos[0], pos[1], pos[2]) 
-    glRotatef(rot[0], rot[1], rot[2], rot[3])
-    glTranslatef(0, 0, -man["arms"][0]["height"]/2)   
-    glColor3f(r,g,b)
-    arm = man["arms"][0]
-    gluCylinder(gluNewQuadric(), arm["create_base"], arm["create_top"], arm["height"], 10, 10)  
-    glPopMatrix()
-
-    # left arm
-    glPushMatrix()
-    r, g, b = man['arms'][1]['color']
-    pos = man["arms"][1]["position"]
-    rot = man["arms"][1]["rotation"]
-    glTranslatef(pos[0], pos[1], pos[2]) 
-    glRotatef(rot[0], rot[1], rot[2], rot[3]) 
-    glTranslatef(0, 0, -man["arms"][1]["height"]/2)    
-    glColor3f(r,g,b)
-    arm = man["arms"][1]
-    gluCylinder(gluNewQuadric(), arm["create_base"], arm["create_top"], arm["height"], 10, 10)  
-    glPopMatrix()
 
 
 
@@ -423,9 +443,10 @@ def showScreen():
                ]
     for i in range(len(boundary)):
         draw_boundary(i, boundary[i])
-    #man
     
-    draw_man()
+    
+    #man
+    # draw_man()
     
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
