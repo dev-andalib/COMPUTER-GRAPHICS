@@ -1,17 +1,17 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-
+import random
 
 
 fovY = 150  # How wide the camera can see in vertical direction
 grid_length = 50  # Length of grid lines
 
 
-
+#game stat
+stat = "restarted"
 
 #man object
-
 man = {
     "head" : {"create": [20, 10, 10], 
               "color": (0.0, 1.0, 1.0), 
@@ -55,6 +55,20 @@ man = {
                "color": (0.251, 0.251, 0.251),
                "position" : [50 , 310, 45] ,  
                "rotation": [90, 1, 0, 0] },
+}
+
+# enemy object
+enemy = {
+    "head" : {"create": [20, 10, 10], 
+              "color": (0.251, 0.251, 0.251), 
+              "position": [50, 320, 80]},
+
+
+    "body" : {"create": [50, 100, 100], 
+              "color": (1, 0, 0), 
+              "position": [50, 320, 80-20-25]},
+     
+     "list" : []
 }
 
 
@@ -369,15 +383,44 @@ def draw_man():
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
 
+def draw_enemy(x, y):
+    global enemy
+
+    #bod
+    glPushMatrix()
+    r, g, b = enemy["body"]["color"]
+    glColor3f(r,g,b)
+    enemy["body"]["position"][0] = x
+    enemy["body"]["position"][1] = y    
+    pos = enemy["body"]["position"]
+    glTranslatef(pos[0], pos[1], pos[2])
+    r,s,st = enemy["body"]["create"]
+    gluSphere(gluNewQuadric(), r, s, st)
+    glPopMatrix()
 
 
+
+
+    #head
+    glPushMatrix()
+    r, g, b = enemy["head"]["color"]
+    glColor3f(r,g,b)
+    enemy["head"]["position"][0] = x
+    enemy["head"]["position"][1] = y
+    pos = enemy["head"]["position"]
+    glTranslatef(pos[0], pos[1], pos[2])
+    r,s,st = enemy["head"]["create"]
+    gluSphere(gluNewQuadric(), r, s, st)
+    glPopMatrix()
+
+    return enemy
 
 
 
 
 
 def showScreen():
-    global grid_length
+    global grid_length, stat, enemy
   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
@@ -447,6 +490,24 @@ def showScreen():
     
     #man
     # draw_man()
+
+
+    #enemy
+    for i in range(5):
+        if stat == "restarted":
+            x = random.uniform(-300, 325)
+            y = random.uniform(-34, 275)
+            enemy["list"].append(draw_enemy(x, y))
+           
+            if i == 4:
+                stat = 'continued'
+    
+        else:
+            e = enemy["list"][i]
+            draw_enemy(x = e["head"]["position"][0], y = e["head"]["position"][1])
+
+
+
     
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
