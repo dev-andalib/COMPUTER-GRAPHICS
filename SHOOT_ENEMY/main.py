@@ -4,20 +4,59 @@ from OpenGL.GLU import *
 
 
 
-fovY = 150  # Field of view
+fovY = 150  # How wide the camera can see in vertical direction
 grid_length = 50  # Length of grid lines
 
 
+
+
 #man object
+
 man = {
-    "head" : {"create": [20, 10, 10], "color": (0, 0, 0), "position": [
-        50, 320, 50]},
-    "body" : {"create": 30, "color" : (0,1,0), "position" :[50, 320, 30]},
-    "legs" : [],
-    "arms" : [],
+    "head" : {"create": [20, 10, 10], 
+              "color": (0.0, 1.0, 1.0), 
+              "position": [50, 320, 80]},
+    
+    "body" : {"create": [30, 30, 50], 
+              "color" : (0.04, 0.47, 0.19), 
+              "position" :[50, 320, 80-20-25]},
+    
+    "legs" : [{"create_base": 10, 
+               "create_top": 2,            # right
+               "height": 40,
+               "color":(0, 0, 0),
+               "position" : [50 + 8, 320, 45 - 15 - 10] },
+
+              {"create_base": 10, 
+               "create_top": 2,                # left
+               "height": 40,
+               "color":(0, 0, 0),
+               "position" : [50 - 8, 320, 45 - 15 - 10] }],
+
+
+    "arms" : [{"create_base": 8,
+               "create_top": 6,
+               "height": 40,
+               "color": (0, 0, 0),
+               "position" : [50 + 18, 280, 45] ,  
+               "rotation": [90, 0, 0, 0] },
+
+              { "create_base": 8,
+                "create_top": 6,
+                "height": 40,
+                "color": (0, 0, 0),
+                "position" : [50 - 18, 280, 45] ,
+                "rotation": [90, 0, 0, 0]}],
+
+
     "gun"  : [],
 }
 
+
+#camera position
+camera_pos = [50, -200, 100] 
+camera_center = [50, 320, 50] 
+step_size = 5
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     pass
@@ -74,11 +113,18 @@ def keyboardListener(key, x, y):
     """
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
-    # # Move forward (W key)
-    # if key == b'w':  
 
-    # # Move backward (S key)
-    # if key == b's':
+    global camera_pos, step_size
+    
+    z = camera_pos[2]
+    
+    # Move forward (W key)
+    if key == b'w':  
+       z += step_size 
+
+    # Move backward (S key)
+    if key == b's':
+       z -= step_size
 
     # # Rotate gun left (A key)
     # if key == b'a':
@@ -94,29 +140,33 @@ def keyboardListener(key, x, y):
 
     # # Reset the game if R key is pressed
     # if key == b'r':
-
+    camera_pos[2] = z
 
 def specialKeyListener(key, x, y):
     """
     Handles special key inputs (arrow keys) for adjusting the camera angle and height.
     """
-    global camera_pos
-    x, y, z = camera_pos
-    # Move camera up (UP arrow key)
-    # if key == GLUT_KEY_UP:
+    global camera_pos, step_size
+    x = camera_pos[0]
+    y = camera_pos[1]
+    z = camera_pos[2]
+    
+    if key == GLUT_KEY_DOWN:
+        y -= step_size
+    
+    elif key == GLUT_KEY_UP:
+        y += step_size
+    
+    elif key == GLUT_KEY_LEFT:
+        x += step_size 
 
-    # # Move camera down (DOWN arrow key)
-    # if key == GLUT_KEY_DOWN:
-
-    # moving camera left (LEFT arrow key)
-    if key == GLUT_KEY_LEFT:
-        x -= 1  # Small angle decrement for smooth movement
-
-    # moving camera right (RIGHT arrow key)
-    if key == GLUT_KEY_RIGHT:
-        x += 1  # Small angle increment for smooth movement
-
-    camera_pos = (x, y, z)
+    
+    elif key == GLUT_KEY_RIGHT:
+        x -= step_size  
+    
+    camera_pos.clear()
+    camera_pos = [x, y, z]
+    
 
 
 def mouseListener(button, state, x, y):
@@ -135,20 +185,30 @@ def setupCamera():
     Configures the camera's projection and view settings.
     Uses a perspective projection and positions the camera to look at the target.
     """
-    glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
-    glLoadIdentity()  # Reset the projection matrix
-    # Set up a perspective projection (field of view, aspect ratio, near clip, far clip)
-    gluPerspective(fovY, 1.25, 0.1, 1500) # Think why aspect ration is 1.25?
-    glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
-    glLoadIdentity()  # Reset the model-view matrix
+    glMatrixMode(GL_PROJECTION) 
+    glLoadIdentity() # reset matrix
+                         # aspect ration (W/H), object 
+                         # closer than 0.1 are not visible
+                         # farther than 1500 are not visible
+    gluPerspective(fovY, 1.25, 0.1, 1500) 
 
-    # Extract camera pos
-    # ition and look-at target
-    x, y, z = (0,400,200)
-    # Position the camera and set its orientation
-    gluLookAt(x, y, z,  # Camera position
-              0, 0, 0,  # Look-at target
-              0, 0, 1)  # Up vector (z-axis)
+    glMatrixMode(GL_MODELVIEW) # move or rotate object  
+    glLoadIdentity()  
+
+   
+    global camera_pos, camera_center 
+    x = camera_pos[0]
+    y = camera_pos[1]
+    z = camera_pos[2]
+
+
+    x1 = camera_center[0]
+    y1 = camera_center[1]
+    z1 = camera_center[2]
+    
+    gluLookAt(x, y, z,  
+              x1, y1, z1,  
+              0, 0, 1)  
 
 
 def idle():
@@ -209,8 +269,52 @@ def draw_boundary(i, cor):
 
 def draw_man():
     global man
+    
+    #legs 
+
+    #right
     glPushMatrix()
+    r, g, b = man['legs'][0]['color']
+    pos = man["legs"][0]["position"]
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(-180, 1, 0, 0)
+    glColor3f(r,g,b)
+    l = man["legs"][0]
+    gluCylinder(gluNewQuadric(),   l["create_base"], l["create_top"], l["height"], 10, 10 )  
+    glPopMatrix()
+
+
+    #left
+    glPushMatrix()
+    r, g, b = man['legs'][1]['color']
+    pos = man["legs"][1]["position"]
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(-180, 1, 0, 0)
+    glColor3f(r,g,b)
+    l = man["legs"][1]
+    gluCylinder(gluNewQuadric(),  l["create_base"], l["create_top"], l["height"], 10, 10 )  
+    glPopMatrix()
+
+
+    
+    
+
+
+
+    # body drawing
+    glPushMatrix()
+    size = man["body"]["create"][0]
+    r, g, b = man['body']['color']
+    pos = man["body"]
+    glTranslatef(*pos["position"])
+    glScalef(1, 1, 5/3) 
+    glColor3f(r,g,b)
+    glutSolidCube(size) 
+    glPopMatrix()
+
+
     # head drawing
+    glPushMatrix()
     r, g, b = man["head"]["color"]
     glColor3f(r,g,b)
     pos = man["head"]["position"]
@@ -219,15 +323,36 @@ def draw_man():
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
 
-    # body drawing
+
+    #arms
+    # right arm
     glPushMatrix()
-    size = man["body"]["create"]
-    r, g, b = man['body']['color']
-    pos = man["body"]["position"]
+    r, g, b = man['arms'][0]['color']
+    pos = man["arms"][0]["position"]
+    rot = man["arms"][0]["rotation"]
     glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(rot[0], rot[1], rot[2], rot[3])
+    glTranslatef(0, 0, -man["arms"][0]["height"]/2)   
     glColor3f(r,g,b)
-    glutSolidCube(size) 
+    arm = man["arms"][0]
+    gluCylinder(gluNewQuadric(), arm["create_base"], arm["create_top"], arm["height"], 10, 10)  
     glPopMatrix()
+
+    # left arm
+    glPushMatrix()
+    r, g, b = man['arms'][1]['color']
+    pos = man["arms"][1]["position"]
+    rot = man["arms"][1]["rotation"]
+    glTranslatef(pos[0], pos[1], pos[2]) 
+    glRotatef(rot[0], rot[1], rot[2], rot[3]) 
+    glTranslatef(0, 0, -man["arms"][1]["height"]/2)    
+    glColor3f(r,g,b)
+    arm = man["arms"][1]
+    gluCylinder(gluNewQuadric(), arm["create_base"], arm["create_top"], arm["height"], 10, 10)  
+    glPopMatrix()
+
+
+
 
 
 
@@ -238,16 +363,12 @@ def showScreen():
     glLoadIdentity()
     glViewport(0, 0, 1000, 800)
 
-    setupCamera()  # Configure camera perspective
-
-   
-
-    
+    setupCamera()   
     
     
     
     # draw grids
-    start = [-275,0]
+    start = [-275,-9]
     temp = start.copy()
     for i in range(13):
         for j in range(13):
@@ -288,24 +409,26 @@ def showScreen():
    
     
     #boundary
-    height = grid_length * 1.5
+    h_max = 100
+    h_min = 0
+    x_max = 375
+    x_min = -275
+    y_max = 640
+    y_min = -9
     boundary = [
-                 [[-275,-10, 0],[-275,-10, height],[375, -10, height],[375, -10, 0]], 
-                 [[-275,-10, 0],[-275,-10, height],[-275, 640, height],[-275, 640, 0]], 
-                 [[375,-10, 0],[375,-10, height],[375, 640, height],[375, 640, 0]], 
-                 [[-275,640, 0],[-275,640, height],[375, 640, height],[375, 640, 0]]
+                 [[x_min,y_min, h_min],[x_min,y_min, h_max],[x_max, y_min, h_max],[x_max, y_min, h_min]], 
+                 [[x_min,y_min, h_min],[x_min,y_min, h_max],[x_min, y_max, h_max],[x_min, y_max, h_min]], 
+                 [[x_max,y_min, h_min],[x_max,y_min, h_max],[x_max, y_max, h_max],[x_max, y_max, h_min]], 
+                 [[x_min,y_max, h_min],[x_min,y_max, h_max],[x_max, y_max, h_max],[x_max, y_max, h_min]]
                ]
     for i in range(len(boundary)):
         draw_boundary(i, boundary[i])
-
-
     #man
     
     draw_man()
     
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
-
 
 
 def main():
