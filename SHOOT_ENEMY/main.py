@@ -11,7 +11,10 @@ grid_length = 50  # Length of grid lines
 
 #game stat
 stat = "restarted"
-
+score = 0
+bullets = 10
+life = 5
+cheat = False
 #man object
 man = {
     "head" : {"create": [20, 10, 10], 
@@ -61,7 +64,10 @@ man = {
     "rot_theta" : 0, # angle of rotation about z-axis
 }
 
+temp = copy.deepcopy(man)
 
+# bullet
+bullet = []
 
 # enemy object
 enemy = {
@@ -79,9 +85,11 @@ enemy_list = []
 
 
 #camera position
-camera_pos = [50, 100, 200] 
-camera_center = [50, 120, 50] 
-
+camera_pos = [50, -20, 180] 
+camera_center = [50, 120, 20]
+cam_temp_pos = camera_pos.copy()
+camera_temp_center = camera_center.copy() 
+third_person_view = True  
 
 #movement
 step_size = 5
@@ -94,56 +102,75 @@ y_min = -9
 
 
 
+def setupCamera():
+    """
+    Configures the camera's projection and view settings.
+    Uses a perspective projection and positions the camera to look at the target.
+    """
+    glMatrixMode(GL_PROJECTION) 
+    glLoadIdentity() # reset matrix
+                         # aspect ration (W/H), object 
+                         # closer than 0.1 are not visible
+                         # farther than 1500 are not visible
+    gluPerspective(fovY, 1.47, 0.1, 1500) 
+
+    glMatrixMode(GL_MODELVIEW) # move or rotate object  
+    glLoadIdentity()  
+
+   
+    global camera_pos, camera_center 
+    x = camera_pos[0]
+    y = camera_pos[1]
+    z = camera_pos[2]
+
+
+    x1 = camera_center[0]
+    y1 = camera_center[1]
+    z1 = camera_center[2]
+    
+    gluLookAt(x, y, z,  
+              x1, y1, z1,  
+              0, 0, 1)  
+
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
-    pass
-    # glColor3f(1,1,1)
-    # glMatrixMode(GL_PROJECTION)
-    # glPushMatrix()
-    # glLoadIdentity()
     
-    # # Set up an orthographic projection that matches window coordinates
-    # gluOrtho2D(0, 1000, 0, 800)  # left, right, bottom, top
+    glColor3f(1,1,1)
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    # Set up an orthographic projection that matches window coordinates
+    gluOrtho2D(0, 1000, 0, 680)  # left, right, bottom, top
 
     
-    # glMatrixMode(GL_MODELVIEW)
-    # glPushMatrix()
-    # glLoadIdentity()
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
     
-    # # Draw text at (x, y) in screen coordinates
-    # glRasterPos2f(x, y)
-    # for ch in text:
-    #     glutBitmapCharacter(font, ord(ch))
+    # Draw text at (x, y) in screen coordinates
+    glRasterPos2f(x, y)
+    for ch in text:
+        glutBitmapCharacter(font, ord(ch))
     
-    # # Restore original projection and modelview matrices
-    # glPopMatrix()
-    # glMatrixMode(GL_PROJECTION)
-    # glPopMatrix()
-    # glMatrixMode(GL_MODELVIEW)
+    # Restore original projection and modelview matrices
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
 
 
-def draw_shapes():
-    pass
-    # glPushMatrix()  # Save the current matrix state
-    
-    # glColor3f(1, 0, 0)
-    # glTranslatef(0, 0, 0)  
-    # glutSolidCube(60) # Take cube size as the parameter
-    # glTranslatef(0, 0, 100) 
-    # glColor3f(0, 1, 0)
-    # glutSolidCube(60) 
 
-    # glColor3f(1, 1, 0)
-    # gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)  # parameters are: quadric, base radius, top radius, height, slices, stacks
-    # glTranslatef(100, 0, 100) 
-    # glRotatef(90, 0, 1, 0)  # parameters are: angle, x, y, z
-    # gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)
-
-    # glColor3f(0, 1, 1)
-    # glTranslatef(300, 0, 100) 
-    # gluSphere(gluNewQuadric(), 80, 10, 10)  # parameters are: quadric, radius, slices, stacks
-
-    # glPopMatrix()  # Restore the previous matrix state
-
+def restart():
+    global man, bullet, enemy_list, score, bullets, life, temp, camera_center, camera_pos, x_min, x_max, y_min, y_max
+    bullets = 10
+    life = 5
+    score = 0
+    enemy_list.clear()
+    bullet.clear()
+    man = copy.deepcopy(temp)
+    camera_pos = [50, -20, 180] 
+    camera_center = [50, 120, 20]
+    enemy_creation(x_min, x_max, y_min, y_max)
 
 
 
@@ -152,8 +179,7 @@ def keyboardListener(key, x, y):
     Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
     """
 
-    global man, step_size,  x_max , x_min , y_max , y_min 
-    
+    global man, step_size,  x_max , x_min , y_max , y_min, cheat
     
     
     # Move forward (W key)
@@ -232,85 +258,121 @@ def keyboardListener(key, x, y):
         man["theta"] = math.radians(man["rot_theta"] - 90)
 
     # # Toggle cheat mode (C key)
-    # if key == b'c':
+    if key == b'c':
+        cheat = not cheat
+        
 
     # # Toggle cheat vision (V key)
     # if key == b'v':
 
-    # # Reset the game if R key is pressed
-    # if key == b'r':
+    # Reset the game if R key is pressed
+    if key == b'r':
+        restart()
     
 
 def specialKeyListener(key, x, y):
     """
-    Handles special key inputs (arrow keys) for adjusting the camera angle and height.
+    Handles special key inputs (arrow keys) for adjusting the camera position.
+    Moves the camera along the direction to the target.
     """
-    global camera_pos, step_size
-    x = camera_pos[0]
-    y = camera_pos[1]
-    z = camera_pos[2]
-    
-    if key == GLUT_KEY_DOWN:
-        y -= step_size
-    
-    elif key == GLUT_KEY_UP:
-        y += step_size
-    
-    elif key == GLUT_KEY_LEFT:
-        x += step_size 
+    global camera_pos, step_size, camera_center
+
+    x = camera_center[0] - camera_pos[0]
+    y = camera_center[1] - camera_pos[1]
+    z = camera_center[2] - camera_pos[2]
+
+    mod = math.sqrt(x * x + y * y + z * z)
+    if mod != 0:
+        x /= mod
+        y /= mod
+        z /= mod
+
+    if key == GLUT_KEY_UP:  
+        camera_pos[0] += x * step_size
+        camera_pos[1] += y * step_size
+        if camera_pos[2] + z * step_size > 0:
+            camera_pos[2] += z * step_size
+
+    elif key == GLUT_KEY_DOWN:  
+        camera_pos[0] -= x * step_size
+        camera_pos[1] -= y * step_size
+        if math.sqrt((camera_pos[0] - camera_center[0]) ** 2 +
+                     (camera_pos[1] - camera_center[1]) ** 2) > 10:  
+            camera_pos[2] -= z * step_size  
+        else:
+            if camera_pos[2] + z * step_size > 0:
+                camera_pos[2] += z * step_size  
+
+    elif key == GLUT_KEY_LEFT:  
+        angle = math.radians(5) 
+        cos_angle = math.cos(angle)
+        sin_angle = math.sin(angle)
+
+        
+        new_x = camera_center[0] + (camera_pos[0] - camera_center[0]) * cos_angle - (camera_pos[1] - camera_center[1]) * sin_angle
+        new_y = camera_center[1] + (camera_pos[0] - camera_center[0]) * sin_angle + (camera_pos[1] - camera_center[1]) * cos_angle
+
+        camera_pos[0] = new_x
+        camera_pos[1] = new_y
+
+    elif key == GLUT_KEY_RIGHT:  
+        angle = math.radians(-5)  
+        cos_angle = math.cos(angle)
+        sin_angle = math.sin(angle)
+
+        
+        new_x = camera_center[0] + (camera_pos[0] - camera_center[0]) * cos_angle - (camera_pos[1] - camera_center[1]) * sin_angle
+        new_y = camera_center[1] + (camera_pos[0] - camera_center[0]) * sin_angle + (camera_pos[1] - camera_center[1]) * cos_angle
+
+        camera_pos[0] = new_x
+        camera_pos[1] = new_y
 
     
-    elif key == GLUT_KEY_RIGHT:
-        x -= step_size  
-    
-    camera_pos.clear()
-    camera_pos = [x, y, z]
     
 
+def draw_bullet(pos):
+    global bullet
+    glPushMatrix()
+    r, g, b = (0.36,0.25,0.20)        
+    glTranslatef(pos[0], pos[1], pos[2])
+    glColor3f(r,g,b)
+    glutSolidCube(10) 
+    glPopMatrix()
 
 def mouseListener(button, state, x, y):
-    """
-    Handles mouse inputs for firing bullets (left click) and toggling camera mode (right click).
-    """
-        # # Left mouse button fires a bullet
-        # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+    global camera_pos, camera_center, third_person_view
 
-        # # Right mouse button toggles camera tracking mode
-        # if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        print("Player fired bullets!")
+        pos = []
+        for i in range(3):
+            pos.append(man["gun"]["position"][i])
+
+        pos[0] += man["gun"]["height"] * math.cos(man["theta"])
+        pos[1] += man["gun"]["height"] * math.sin(man["theta"])
+        bullet.append([pos[0], pos[1], pos[2], man["theta"]]) 
+        draw_bullet([pos[0], pos[1], pos[2]])
+
+    if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+
+        third_person_view = not third_person_view 
+        if third_person_view:
+            camera_pos = cam_temp_pos.copy()
+            camera_center = camera_temp_center.copy()
+        glutPostRedisplay()
     
-def setupCamera():
-    """
-    Configures the camera's projection and view settings.
-    Uses a perspective projection and positions the camera to look at the target.
-    """
-    glMatrixMode(GL_PROJECTION) 
-    glLoadIdentity() # reset matrix
-                         # aspect ration (W/H), object 
-                         # closer than 0.1 are not visible
-                         # farther than 1500 are not visible
-    gluPerspective(fovY, 1.47, 0.1, 1500) 
-
-    glMatrixMode(GL_MODELVIEW) # move or rotate object  
-    glLoadIdentity()  
-
-   
-    global camera_pos, camera_center 
-    x = camera_pos[0]
-    y = camera_pos[1]
-    z = camera_pos[2]
 
 
-    x1 = camera_center[0]
-    y1 = camera_center[1]
-    z1 = camera_center[2]
+
     
-    gluLookAt(x, y, z,  
-              x1, y1, z1,  
-              0, 0, 1)  
 
 
 def idle():
-    global enemy_list, man
+    global enemy_list, man, x_max, x_min, y_max, y_min, bullet, bullets, score
+    if bullets == 0:
+        game_over(man)
+    # enemy movement
+    
     step_size = 0.1
     hx = man['head']['position'][0]
     hy = man['head']['position'][1]
@@ -332,7 +394,169 @@ def idle():
             i["head"]["position"][1] -= random.uniform(0, step_size)
             i["body"]["position"][1] -= random.uniform(0, step_size)
 
+    # bullet movement
+    new_bullets = []
+    for b in bullet:
+        angle = b[3]
+        x_move = step_size * math.cos(angle)
+        y_move = step_size * math.sin(angle)
+
+        new_x = b[0] - x_move
+        new_y = b[1] - y_move
+
+        
+        if (new_x < x_min + 10 or new_x > x_max - 10) or (new_y < y_min + 10 or new_y > y_max - 10):
+            bullets -= 1
+            
+                
+            continue  
+
+        hit_enemy = False
+        for enemy in enemy_list[:]:  
+            xe = enemy["body"]["position"][0]
+            ye = enemy["body"]["position"][1]
+            if xe - 12 <= new_x <= xe + 12 and ye - 12 <= new_y <= ye + 12:
+                enemy_list.remove(enemy)
+                score += 1
+                enemy_creation1(x_min, x_max, y_min, y_max)
+                hit_enemy = True
+                break
+ 
+
+        if not hit_enemy:
+            new_bullets.append([b[0] + x_move * 5, b[1] + y_move * 5, b[2], angle])
+
+    bullet = new_bullets
+
+    #3rd person view
+    global third_person_view, camera_pos, camera_center
+
+    if not third_person_view:
+        hx, hy, hz = man["head"]["position"]
+        theta = man["theta"]
+
+        cam_distance = 20  
+        cam_height = 10    
+
+        dx = -math.cos(theta)
+        dy = -math.sin(theta)
+
+        camera_pos = [
+            hx + dx * cam_distance,
+            hy + dy * cam_distance,
+            hz + cam_height
+        ]
+
+        forward_distance = 50  
+        camera_center = [
+            hx + math.cos(theta) * forward_distance,
+            hy + math.sin(theta) * forward_distance,
+            hz
+        ]
+
+    #cheat
+    # i = 0
+    # while(i<len(enemy_list)):
+    #     cx, cy, cz = man["head"]["position"]
+    #     enemy = enemy_list[i]
+    #     ex, ey, ez = enemy["head"]["position"]
+
+    #     dx = ex - cx
+    #     dy = ey - cy
+    #     a = math.atan2(dy, dx)
+    #     theta = man["theta"]
+    #     angle_diff = math.atan2(math.sin(a - theta),
+    #                         math.cos(a - theta))
+    #     if abs(math.degrees(angle_diff)) < 5:
+    #         pos = []
+    #         for i in range(3):
+    #             pos.append(man["gun"]["position"][i])
+
+    #         pos[0] += man["gun"]["height"] * math.cos(man["theta"])
+    #         pos[1] += man["gun"]["height"] * math.sin(man["theta"])
+    #         bullet.append([pos[0], pos[1], pos[2], man["theta"]]) 
+    #         draw_bullet([pos[0], pos[1], pos[2]])
+    #     i += 1
+
+    if cheat:
+             man["rot_theta"] += 5 
+             man["rot_theta"] %= 360
+             man["theta"] = math.radians(man["rot_theta"] - 90)
+
+    #man dead
+    check_collision(man["body"]["position"], enemy_list)
+    if life == 0:
+        game_over(man)
+    print("Player Remaining life: ", life)
+    print("Player Missed Bullets: ", 10 - bullets)
+
+
+    #text
+    draw_text(10, 670, f"Player Life Remaining {life}")
+    draw_text(10, 640, f"Bullets Missed: {10 - bullets}")
+    draw_text(10, 500, f"Current Score: {score}")
     glutPostRedisplay()
+
+def game_over(man):
+    
+    glPushMatrix()
+    body_pos = man["body"]["position"]
+    center = body_pos[2] - (man["body"]["create"][2] / 2)  # base center of the cube
+    
+    glTranslatef(body_pos[0], body_pos[1], center)
+    glRotatef(90, 0, 1, 0)
+    glTranslatef(-body_pos[0], -body_pos[1], -center)
+
+    draw_man()
+    glPopMatrix()
+
+    bullet.clear()
+    enemy_list.clear()
+    
+    
+
+    
+
+def distance(pos1, pos2):
+    return math.sqrt((pos1[0] - pos2[0]) ** 2 +
+                     (pos1[1] - pos2[1]) ** 2 +
+                     (pos1[2] - pos2[2]) ** 2)
+
+
+
+def enemy_creation1(x_min, x_max, y_min, y_max):
+    global enemy, enemy_list, stat, man
+    
+    
+    
+    r = enemy["body"]["create"][0]
+
+    x = random.uniform(x_min + r, x_max - r)
+    y = random.uniform(y_min + r, y_max - r)
+    if man["head"]["position"][0] == x and man["head"]["position"][1] == y:
+        x = random.uniform(x_min + r, x_max - r)
+        y = random.uniform(y_min + r, y_max - r)
+        
+
+    enemy["body"]["position"][0] = x
+    enemy["body"]["position"][1] = y
+
+    enemy["head"]["position"][0] = x
+    enemy["head"]["position"][1] = y
+    enemy_list.append(copy.deepcopy(enemy))
+
+def check_collision(man, enemies, threshold=20):
+    global life
+    pos = man
+
+    for enemy in enemies:
+        enemy_pos = enemy["body"]["position"]
+        dist = distance(pos, enemy_pos)
+
+        if dist < threshold:
+            life -= 1  # decrease health by 1
+        if life < 0:
+            game_over(man)            
 
 def draw_tile(x, y):
     start = [x, y]
@@ -381,7 +605,6 @@ def draw_boundary(i, cor):
                 
 
     glEnd()
-
 
 def draw_man():
     global man
@@ -490,8 +713,6 @@ def draw_man():
     glPopMatrix()
     glPopMatrix()
 
-
-
 def draw_enemy(i):
     enemy = i
     
@@ -517,7 +738,6 @@ def draw_enemy(i):
     glPopMatrix()
     return enemy
 
-
 def enemy_creation(x_min, x_max, y_min, y_max):
     global enemy, enemy_list, stat, man
     
@@ -540,12 +760,7 @@ def enemy_creation(x_min, x_max, y_min, y_max):
 
         enemy_list.append(copy.deepcopy(enemy))
         if i == 4:
-            stat = "done"
-           
-            
-
-
-    
+            stat = "done"          
 
 def showScreen():
     global grid_length, enemy_list, stat , h_max , h_min , x_max , x_min , y_max , y_min 
@@ -625,12 +840,13 @@ def showScreen():
     
         
 
-
+    #bullet
+    for pos in range(len(bullet)):
+        draw_bullet(bullet[pos])
 
     
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
-
 
 def main():
     glutInit()
