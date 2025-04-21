@@ -1,3 +1,4 @@
+import copy
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -58,6 +59,8 @@ man = {
 }
 
 # enemy object
+
+
 enemy = {
     "head" : {"create": [20, 10, 10], 
               "color": (0.251, 0.251, 0.251), 
@@ -67,9 +70,9 @@ enemy = {
     "body" : {"create": [50, 100, 100], 
               "color": (1, 0, 0), 
               "position": [50, 320, 80-20-25]},
-     
-     "list" : []
 }
+
+enemy_list = []
 
 
 #camera position
@@ -383,44 +386,65 @@ def draw_man():
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
 
-def draw_enemy(x, y):
-    global enemy
+
+
+
+
+def draw_enemy(i):
+    enemy = i
+    
 
     #bod
     glPushMatrix()
     r, g, b = enemy["body"]["color"]
     glColor3f(r,g,b)
-    enemy["body"]["position"][0] = x
-    enemy["body"]["position"][1] = y    
     pos = enemy["body"]["position"]
     glTranslatef(pos[0], pos[1], pos[2])
     r,s,st = enemy["body"]["create"]
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
 
-
-
-
     #head
     glPushMatrix()
     r, g, b = enemy["head"]["color"]
     glColor3f(r,g,b)
-    enemy["head"]["position"][0] = x
-    enemy["head"]["position"][1] = y
     pos = enemy["head"]["position"]
     glTranslatef(pos[0], pos[1], pos[2])
     r,s,st = enemy["head"]["create"]
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
-
     return enemy
 
 
 
 
 
+
+def enemy_creation(x_min, x_max, y_min, y_max):
+    global enemy, enemy_list, stat
+    
+    
+    for i in range(5):
+        r = enemy["body"]["create"][0]
+
+        x = random.uniform(x_min + r, x_max - r)
+        y = random.uniform(y_min + r, y_max - r)
+
+        enemy["body"]["position"][0] = x
+        enemy["body"]["position"][1] = y
+
+        enemy["head"]["position"][0] = x
+        enemy["head"]["position"][1] = y
+
+        enemy_list.append(copy.deepcopy(enemy))
+        if i == 4:
+            stat = "done"
+           
+            
+
+
 def showScreen():
-    global grid_length, stat, enemy
+    global grid_length, enemy_list, stat
   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
@@ -493,18 +517,14 @@ def showScreen():
 
 
     #enemy
-    for i in range(5):
-        if stat == "restarted":
-            x = random.uniform(-300, 325)
-            y = random.uniform(-34, 275)
-            enemy["list"].append(draw_enemy(x, y))
-           
-            if i == 4:
-                stat = 'continued'
+    if stat == "restarted":
+        enemy_creation(x_min, x_max, y_min, y_max)
     
-        else:
-            e = enemy["list"][i]
-            draw_enemy(x = e["head"]["position"][0], y = e["head"]["position"][1])
+    
+    for i in enemy_list:
+        draw_enemy(i)
+    
+        
 
 
 
