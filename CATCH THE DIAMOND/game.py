@@ -444,13 +444,3 @@ glutMouseFunc(mouse_handler)
 glutMainLoop()
 
 
-
-
-'''
-Install the following things
-
-pygame
-PyOpenGL 
-PyOpenGL_accelerate
-   
-'''
