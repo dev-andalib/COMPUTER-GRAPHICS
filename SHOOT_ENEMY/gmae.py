@@ -5,7 +5,7 @@ from OpenGL.GLU import *
 import random, math
 
 
-fovY = 150  # How wide the camera can see in vertical direction
+fovY = 120  # How wide the camera can see in vertical direction
 grid_length = 50  # Length of grid lines
 
 
@@ -85,20 +85,35 @@ enemy_list = []
 
 
 #camera position
-camera_pos = [50, -50, 150]
-camera_center = [50, 30,  20]
+camera_pos = [50, -50, 80]
+camera_center = [50, 0,  80]
 cam_temp_pos = camera_pos.copy()
 camera_temp_center = camera_center.copy() 
 third_person_view = True  
+cam_angle = math.radians(-90)
 
 #movement
 step_size = 5
-h_max = 100
+h_max = 50
 h_min = 0
 x_max = 375
 x_min = -275
 y_max = 640
 y_min = -9
+
+
+def updateCameraPosition():
+    global camera_pos, camera_center, cam_angle
+
+    
+    dx = camera_pos[0] - camera_center[0]
+    dy = camera_pos[1] - camera_center[1]
+    rad = math.sqrt(dx**2 + dy**2)
+
+    
+    camera_pos[0] = camera_center[0] + rad * math.cos(cam_angle)
+    camera_pos[1] = camera_center[1] + rad * math.sin(cam_angle)
+
 
 
 
@@ -272,9 +287,10 @@ def keyboardListener(key, x, y):
 
 def specialKeyListener(key, x, y):
 
-    global camera_pos, step_size, camera_center
-
+    global camera_pos, step_size, camera_center, cam_angle
     
+
+   
     dx = camera_center[0] - camera_pos[0]
     dy = camera_center[1] - camera_pos[1]
     dz = camera_center[2] - camera_pos[2]
@@ -290,12 +306,36 @@ def specialKeyListener(key, x, y):
     if key == GLUT_KEY_UP: 
         camera_pos[0] += dx * step_size
         camera_pos[1] += dy * step_size
-        camera_pos[2] += dz * step_size/2
+        camera_pos[2] += dz * step_size
+
+
+        camera_center[0]  += dx * step_size
+        camera_center[1]  += dy * step_size
+        camera_center[2]  += dz * step_size
+
+
+        
 
     elif key == GLUT_KEY_DOWN:  
+        
         camera_pos[0] -= dx * step_size
         camera_pos[1] -= dy * step_size
-        camera_pos[2] -= dz * step_size/2
+        camera_pos[2] -= dz * step_size
+
+
+        camera_center[0]  -= dx * step_size
+        camera_center[1]  -= dy * step_size
+        camera_center[2]  -= dz * step_size
+
+    elif key == GLUT_KEY_RIGHT:
+        if cam_angle < -math.pi/4:
+            cam_angle += math.pi/16
+            updateCameraPosition()
+
+    elif key == GLUT_KEY_LEFT:
+        if cam_angle > -3* math.pi/4:
+            cam_angle -= math.pi/16
+            updateCameraPosition()
 
     glutPostRedisplay()
         
@@ -312,10 +352,11 @@ def draw_bullet(pos):
     glPopMatrix()
 
 def mouseListener(button, state, x, y):
+    
     global camera_pos, camera_center, third_person_view
 
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
-        print("Player fired bullets!")
+        # print("Player fired bullets!")
         pos = []
         for i in range(3):
             pos.append(man["gun"]["position"][i])
@@ -426,30 +467,7 @@ def idle():
             hz
         ]
 
-    #cheat
-    # i = 0
-    # while(i<len(enemy_list)):
-    #     cx, cy, cz = man["head"]["position"]
-    #     enemy = enemy_list[i]
-    #     ex, ey, ez = enemy["head"]["position"]
-
-    #     dx = ex - cx
-    #     dy = ey - cy
-    #     a = math.atan2(dy, dx)
-    #     theta = man["theta"]
-    #     angle_diff = math.atan2(math.sin(a - theta),
-    #                         math.cos(a - theta))
-    #     if abs(math.degrees(angle_diff)) < 5:
-    #         pos = []
-    #         for i in range(3):
-    #             pos.append(man["gun"]["position"][i])
-
-    #         pos[0] += man["gun"]["height"] * math.cos(man["theta"])
-    #         pos[1] += man["gun"]["height"] * math.sin(man["theta"])
-    #         bullet.append([pos[0], pos[1], pos[2], man["theta"]]) 
-    #         draw_bullet([pos[0], pos[1], pos[2]])
-    #     i += 1
-
+    
     if cheat:
              man["rot_theta"] += 5 
              man["rot_theta"] %= 360
@@ -459,8 +477,8 @@ def idle():
     check_collision(man["body"]["position"], enemy_list)
     if life == 0:
         game_over(man)
-    print("Player Remaining life: ", life)
-    print("Player Missed Bullets: ", 10 - bullets)
+    # print("Player Remaining life: ", life)
+    # print("Player Missed Bullets: ", 10 - bullets)
 
 
     #text
