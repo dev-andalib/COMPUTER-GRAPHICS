@@ -41,6 +41,11 @@ maze_wall= [[-800, 800, 800, 800],
             [-550, -800, -550, -500]]
 
 
+x_min = maze_wall[0][0]
+x_max = maze_wall[0][2]
+y_min = maze_wall[1][1]
+y_max = maze_wall[1][2]
+
 # man
 man = {
     "head" : {"create": [20, 10, 10], 
@@ -81,19 +86,23 @@ man = {
 
     
 
-    "theta" : math.radians(0),  # for movement direction
+    "theta" : math.radians(-90),  # for movement direction
     "rot_theta" : 0, # angle of rotation about z-axis
+    "type" : "player"
 } 
+step_size = 5
+
 
 #game stat
 game_r = True
 
 #game elements
-tele_cor = [(590, 710), (440, 180), (-315, 430), (320, 650), (660, 90), (90, 380), (100, 720), (-390, 320)]
+tele_cor = [(590, 710), (440, 180), (-355, 430), (320, 650), (660, 90), (90, 380), (100, 720), (-390, 320)]
 tele_dis = 100 
 tele_update = True
 tele_i1 = None 
 tele_i2 = None
+target_tele = None
 
 def draw_man():
     global man
@@ -191,15 +200,45 @@ def draw_man():
     glPopMatrix()
     glPopMatrix()
 
-def spawn():
-    x = random.uniform()
+def spawn(obj, x, y):
+    global tele_i2, tele_i1, tele_cor,  target_tele
+    
+    
+
+    if obj["type"] == "player":    
+        man["head"]["position"][0] = x 
+        man["head"]["position"][1] = y
+
+       
+        man["body"]["position"][0] = x
+        man["body"]["position"][1] = y
+
+        i = 0
+        for a in man["arms"]:
+           if i == 0: a["position"][0] = x + 20
+           else:      a["position"][0] = x - 20
+           
+           a["position"][1] = y
+           i += 1
+
+
+        i = 0
+        for l in man["legs"]:
+           if i == 0: l["position"][0] = x + 8
+           else:      l["position"][0] = x - 8
+
+           l["position"][1] = y
+           i += 1
+
+
+        
 
 
 def draw_maze():
     glPushMatrix()
     glColor3f(0, 0, 1)  # Maze wall color (white)
 
-    wall_thickness = 10
+    
     wall_height = 80
 
     # Outer rectangle walls (top, bottom, left, right)
@@ -277,31 +316,137 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
+def wall_check(crr_pos, next_pos):
+    global maze_wall
+
+    x1 = crr_pos[0]
+    y1 = crr_pos[1]
+
+    x2 = next_pos[0]
+    y2 = next_pos[1]
+
+    temp = maze_wall
+
+    
+    
+    
+    for i in temp:
+        
+        wx1, wy1, wx2, wy2 = i
+
+
+        if wx1 == wx2:
+            if min(x1, x2) <= wx1 <= max(x1, x2):
+                
+                if max(min(y1, y2), min(wy1, wy2)) <= min(max(y1, y2), max(wy1, wy2)):
+                    
+                    return "hit"
+
+       
+        elif wy1 == wy2:
+            if min(y1, y2) <= wy1 <= max(y1, y2):
+                
+                if max(min(x1, x2), min(wx1, wx2)) <= min(max(x1, x2), max(wx1, wx2)):
+                    
+                    return "hit"
+        
+    else: 
+        return "norm"
+
+
 
 def keyboardListener(key, x, y):
-    """
-    Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
-    """
-    # # Move forward (W key)
-    # if key == b'w':
 
-    # # Move backward (S key)
-    # if key == b's':
+    global step_size
+    
+     # Move forward (W key)
+    if key == b'w':
+       curr_x, curr_y = man["head"]["position"][0], man["head"]["position"][1]
+       x = step_size * math.cos(man["theta"])
+       y = step_size * math.sin(man["theta"])
+       new_x = man["head"]["position"][0] + x
+       new_y = man["head"]["position"][1] + y
 
-    # # Rotate gun left (A key)
-    # if key == b'a':
 
-    # # Rotate gun right (D key)
-    # if key == b'd':
+       
+       
+       stat = wall_check((curr_x, curr_y), (new_x, new_y))
+       if stat == 'hit':
+            x = 0
+            y = 0
 
-    # # Toggle cheat mode (C key)
-    # if key == b'c':
 
-    # # Toggle cheat vision (V key)
-    # if key == b'v':
+    
 
-    # # Reset the game if R key is pressed
-    # if key == b'r':
+       man["head"]["position"][0] += x 
+       man["head"]["position"][1] += y
+
+       
+       man["body"]["position"][0] += x
+       man["body"]["position"][1] += y
+
+       for a in man["arms"]:
+           a["position"][0] += x 
+           a["position"][1] += y
+
+       for l in man["legs"]:
+           l["position"][0] += x
+           l["position"][1] += y
+
+       
+
+
+
+    # Move backward (S key)
+    if key == b's':
+       curr_x, curr_y = man["head"]["position"][0], man["head"]["position"][1]
+
+
+       x = step_size * math.cos(man["theta"])
+       y = step_size * math.sin(man["theta"])
+       new_x = man["head"]["position"][0] - x
+       new_y = man["head"]["position"][1] - y
+
+       
+
+       stat = wall_check((curr_x, curr_y), (new_x, new_y))
+       if stat == 'hit':
+            x = 0
+            y = 0
+
+    
+
+       man["head"]["position"][0] -= x  
+       man["head"]["position"][1] -= y
+
+       man["body"]["position"][0] -= x
+       man["body"]["position"][1] -= y
+
+       for a in man["arms"]:
+           a["position"][0] -= x
+           a["position"][1] -= y
+
+       for l in man["legs"]:
+           l["position"][0] -= x
+           l["position"][1] -= y
+
+       
+
+
+    # Rotate gun left (A key)
+    if key == b'd':
+        man["rot_theta"] -= step_size 
+        man["rot_theta"] %= 360
+        man["theta"] = math.radians(man["rot_theta"] - 90)
+        
+  
+        
+
+    # Rotate gun right (D key)
+    if key == b'a':
+        man["rot_theta"] += step_size  
+        man["rot_theta"] %= 360
+        man["theta"] = math.radians(man["rot_theta"] - 90)
 
 
 def specialKeyListener(key, x, y):
@@ -391,7 +536,7 @@ def draw_teleport(x1,y1, x2,y2):
     gluCylinder(gluNewQuadric(), 30  , 30 , 30 , 10, 10 )  
     glPopMatrix()
 def teleport():
-    global tele_i1, tele_i2, tele_update, tele_dis
+    global tele_i1, tele_i2, tele_update, tele_dis, target_tele 
     
     if tele_update:
         tele_i1 = random.randint(0, len(tele_cor)-1)
@@ -407,24 +552,33 @@ def teleport():
     temp2 = math.pow(math.pow(man["head"]["position"][0] - tele_cor[tele_i2][0], 2) + math.pow(man["head"]["position"][1] - tele_cor[tele_i2][1], 2) , 0.5)
     if temp1 > temp2:
             tele_dis = temp2
+            target_tele = 1
     else:
             tele_dis = temp1
+            target_tele = 2
     
+
 
 def idle():
-    """
-    Idle function that runs continuously:
-    - Triggers screen redraw for real-time updates.
-    """    
-    # Ensure the screen updates with the latest changes
+    global tele_update, tele_dis, tele_i1, tele_i2
+    if tele_dis < 150:
+        
+        if target_tele == 1:
+            x = tele_cor[tele_i1][0]
+            y = tele_cor[tele_i1][1]
+        else:
+            x = tele_cor[tele_i2][0]
+            y = tele_cor[tele_i2][1]
+        tele_update = True
+        teleport()
+        spawn(man, x, y)
 
-    
     
     glutPostRedisplay()
 
 
 def showScreen():
-    global game_r
+    global game_r, tele_update
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix

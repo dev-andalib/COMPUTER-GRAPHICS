@@ -197,7 +197,7 @@ def keyboardListener(key, x, y):
     """
 
     global man, step_size,  x_max , x_min , y_max , y_min, cheat
-    
+    #
     
     # Move forward (W key)
     if key == b'w':
