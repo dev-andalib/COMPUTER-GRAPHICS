@@ -16,6 +16,8 @@ bullets = 10
 life = 5
 cheat = False
 #man object
+
+
 man = {
     "head" : {"create": [20, 10, 10], 
               "color": (0.0, 1.0, 1.0), 
@@ -381,6 +383,7 @@ def mouseListener(button, state, x, y):
 
 
 def idle():
+
     global enemy_list, man, x_max, x_min, y_max, y_min, bullet, bullets, score
     if bullets == 0:
         game_over(man)
@@ -487,6 +490,9 @@ def idle():
     draw_text(10, 500, f"Current Score: {score}")
     glutPostRedisplay()
 
+
+
+
 def game_over(man):
     
     glPushMatrix()
@@ -545,7 +551,7 @@ def check_collision(man, enemies, threshold=20):
 
         if dist < threshold:
             life -= 1  # decrease health by 1
-        if life < 0:
+        if life <= 0:
             game_over(man)            
 
 def draw_tile(x, y):
@@ -837,6 +843,7 @@ def showScreen():
     
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
+
 
 def main():
     glutInit()
