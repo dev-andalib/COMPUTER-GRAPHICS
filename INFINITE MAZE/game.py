@@ -1,8 +1,10 @@
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math, random
+
+
+
 
 
 # Camera-related variables
@@ -103,6 +105,128 @@ tele_update = True
 tele_i1 = None 
 tele_i2 = None
 target_tele = None
+
+
+
+
+# TREASSURES
+class Elixir:
+    def __init__(self, pos):
+        self.pos = pos
+        self.r = 20
+        self.h = 40
+        self.id = 1
+        self.act = False
+
+
+    def draw(self):
+        glPushMatrix()
+        glColor3f(0.4, 0.0, 0.0)
+        glTranslatef(self.pos[0], self.pos[1], self.pos[2]-self.r/4)
+        glutSolidSphere(self.r, 60, 60)
+        glPopMatrix()
+
+        glPushMatrix()       
+        glTranslatef(self.pos[0], self.pos[1], self.pos[2])
+        glColor3f(0.4, 0.0, 0.0)
+        glutSolidCone(self.r, self.h, 60, 60)
+        glPopMatrix()
+   
+class Avarice:
+    def __init__(self, pos):
+        self.Beye = 20
+        self.Seye = 10
+        self.pos = pos
+        self.id = 2
+        self.act = False
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.pos[0], self.pos[1], self.pos[2])
+        glColor3f(1.0, 1.0, 1.0)  # White
+        glScalef(1.5, 1.0, 1.0)  # Stretch horizontally (X-axis)
+        glutSolidSphere(self.Beye, 50, 50)
+        glPopMatrix()
+
+        # iris,red, stretched(glscalef)
+        glPushMatrix()
+        glTranslatef(self.pos[0], self.pos[1], self.pos[2])
+        glColor3f(1.0, 0.0, 0.0)
+        glutSolidSphere(self.Seye, 50, 50)
+        glPopMatrix()
+
+class Halo:
+    def __init__(self, pos):
+        self.inner_r = 5
+        self.outer_r = 30
+        self.pos = pos
+        self.id = 3
+        self.act = False
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.pos[0], self.pos[1], self.pos[2])
+        glColor3f(1.0, 0.84, 0.0)  # Golden color
+        
+        glutSolidTorus(self.inner_r, self.outer_r, 30, 60)
+        glPopMatrix()
+
+class Immor:
+    def __init__(self, pos):
+        self.inner_r = 5
+        self.outer_r = 30
+        self.pos = pos
+        self.id = 4
+        self.act = False
+
+   
+
+    def draw(self):
+        # Draw the thinner, golden ring
+        glPushMatrix()
+        glTranslatef(self.pos[0], self.pos[1], self.pos[2])
+        glColor3f(0.8, 0.85, 0.9)
+        glutSolidTorus(self.inner_r, self.outer_r, 30, 60)
+        glPopMatrix()
+
+        #Draw the diamond
+        glPushMatrix()
+        glTranslatef(self.pos[0]-self.inner_r * 8, self.pos[1], self.pos[2])
+        glRotatef(45, 1, 0, 0)
+        glScalef(15,15,15)
+        glColor3f(0.95, 0.95, 1.0)
+        glutSolidOctahedron()
+        glPopMatrix()
+trea_col = []
+trea_cor = [(552, 370), (362,374), (378, 230), (-106, 380), 
+            (324, 533), (-559, -121), (273, -241), (86, -250)]
+
+treai = None
+sel_t1 = None
+sel_t2 = None
+
+
+def treasure_manage():
+    global treai, sel_t1, sel_t2, trea_col
+
+    sel_t1 = random.randint(0,len(trea_cor)-1)
+    sel_t2 = random.randint(0,len(trea_cor)-1)
+    if sel_t1 == sel_t2:
+        sel_t2 = random.randint(0,len(trea_cor)-1)
+    
+    coor = [[trea_cor[sel_t1][0], trea_col[sel_t1][1], 30], 
+            [trea_cor[sel_t2][0], trea_col[sel_t2][1], 30]]
+    
+    for i in range(2):
+        treai = random.randint(1,4)
+        if treai == 1:
+            obj = Elixir(coor[i])
+            if obj.act:
+                continue
+            trea_col.append(obj.id)
+            obj.act = True
+
+
 
 def draw_man():
     global man
@@ -577,6 +701,7 @@ def idle():
     glutPostRedisplay()
 
 
+
 def showScreen():
     global game_r, tele_update
     # Clear color and depth buffers
@@ -628,6 +753,8 @@ def showScreen():
         tele_update = True
     
     teleport()
+    
+    treasure_manage()
 
     draw_man()
     
