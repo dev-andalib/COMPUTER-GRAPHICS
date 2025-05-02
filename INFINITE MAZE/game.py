@@ -9,6 +9,7 @@ import math, random
 
 # Camera-related variables
 camera_pos = (0, 500, 500)
+is_top = False
 
 fovY = 120  # Field of view
 GRID_LENGTH = 800  # Length of grid lines
@@ -97,6 +98,10 @@ step_size = 5
 
 #game stat
 game_r = True
+top_view = 3
+life = 10
+is_top = False
+
 
 #game elements
 tele_cor = [(590, 710), (440, 180), (-355, 430), (320, 650), (660, 90), (90, 380), (100, 720), (-390, 320)]
@@ -140,6 +145,11 @@ class Avarice:
         self.pos = pos
         self.id = 2
         self.dis = 0
+
+        #power related var
+        self.cam = None
+        self.top = (0, 50, 800)
+        self.count = 0
        
 
     def draw(self):
@@ -156,6 +166,24 @@ class Avarice:
         glColor3f(1.0, 0.0, 0.0)
         glutSolidSphere(self.Seye, 50, 50)
         glPopMatrix()
+
+    
+    def function_on(self, pos):
+        global is_top
+
+        is_top = True
+        self.cam = pos
+        return self.top
+
+
+
+    def function_off(self):
+        global is_top
+
+        is_top = False
+        return self.cam
+        
+            
 
 class Halo:
     def __init__(self, pos):
@@ -533,6 +561,13 @@ def wall_check(crr_pos, next_pos):
 def keyboardListener(key, x, y):
 
     global step_size
+
+    if key == b'p':
+        if not is_top:
+            activate_power()
+        
+        else:
+            deactivate_power()
     
      # Move forward (W key)
     if key == b'w':
@@ -732,6 +767,25 @@ def teleport():
             tele_dis = temp1
             target_tele = 2
     
+def activate_power():
+    global trea_use, camera_pos
+
+    trea_use.append(Avarice([590, 710, 60]))
+    # activation cond
+    for i in trea_use:
+        if i.id == 2:
+            camera_pos = i.function_on(camera_pos)
+    
+
+
+def deactivate_power():
+    global trea_use, camera_pos
+
+    # activation cond
+    for i in trea_use:
+        if i.id == 2:
+            camera_pos = i.function_off()
+
 
 
 def idle():
