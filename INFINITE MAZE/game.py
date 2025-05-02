@@ -116,7 +116,8 @@ class Elixir:
         self.r = 20
         self.h = 40
         self.id = 1
-        self.act = False
+        self.dis = 0
+        
 
 
     def draw(self):
@@ -138,7 +139,8 @@ class Avarice:
         self.Seye = 10
         self.pos = pos
         self.id = 2
-        self.act = False
+        self.dis = 0
+       
 
     def draw(self):
         glPushMatrix()
@@ -161,7 +163,8 @@ class Halo:
         self.outer_r = 30
         self.pos = pos
         self.id = 3
-        self.act = False
+        self.dis = 0
+       
 
     def draw(self):
         glPushMatrix()
@@ -177,9 +180,8 @@ class Immor:
         self.outer_r = 30
         self.pos = pos
         self.id = 4
-        self.act = False
-
-   
+        self.dis = 0
+          
 
     def draw(self):
         # Draw the thinner, golden ring
@@ -205,6 +207,8 @@ treai = None
 sel_t1 = None
 sel_t2 = None
 
+trea_use = []
+
 
 def treasure_manage():
     global treai, sel_t1, sel_t2, trea_col
@@ -214,17 +218,64 @@ def treasure_manage():
     if sel_t1 == sel_t2:
         sel_t2 = random.randint(0,len(trea_cor)-1)
     
-    coor = [[trea_cor[sel_t1][0], trea_col[sel_t1][1], 30], 
-            [trea_cor[sel_t2][0], trea_col[sel_t2][1], 30]]
+    coor = [
+            [trea_cor[sel_t1][0], trea_cor[sel_t1][1], 60], 
+            [trea_cor[sel_t2][0], trea_cor[sel_t2][1], 60]
+           ]
     
     for i in range(2):
         treai = random.randint(1,4)
         if treai == 1:
             obj = Elixir(coor[i])
-            if obj.act:
-                continue
-            trea_col.append(obj.id)
-            obj.act = True
+            trea_col.append(obj)
+        
+        elif treai == 2:
+            obj = Avarice(coor[i])
+            trea_col.append(obj)
+        
+
+        elif treai == 3:
+            obj = Halo(coor[i])
+            trea_col.append(obj)
+        
+
+        elif treai == 4:
+            obj = Immor(coor[i])
+            trea_col.append(obj)
+        
+
+def draw_trea():
+    global trea_col
+
+    for i in trea_col:
+        i.draw()
+def remove_trea(i):
+    global trea_col
+    temp = []
+    for j in trea_col:
+        if i != j:
+            temp.append(j)
+    trea_col.clear()
+    trea_col = temp.copy()
+    temp.clear()
+
+
+def get_trea():
+    global trea_col, trea_use
+    for i in trea_col:
+        pos = i.pos
+        temp = math.pow(math.pow(man["head"]["position"][0] - pos[0], 2) + math.pow(man["head"]["position"][1] - pos[1], 2) , 0.5)
+        i.dis = temp
+
+        if i.dis < 50:
+            trea_use.append(i)
+            remove_trea(i)
+            
+    
+
+            
+            
+        
 
 
 
@@ -685,7 +736,7 @@ def teleport():
 
 def idle():
     global tele_update, tele_dis, tele_i1, tele_i2
-    if tele_dis < 150:
+    if tele_dis < 70:
         
         if target_tele == 1:
             x = tele_cor[tele_i1][0]
@@ -697,13 +748,15 @@ def idle():
         teleport()
         spawn(man, x, y)
 
+
+    get_trea()
     
     glutPostRedisplay()
 
 
 
 def showScreen():
-    global game_r, tele_update
+    global game_r, tele_update, trea_col
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix
@@ -754,10 +807,13 @@ def showScreen():
     
     teleport()
     
-    treasure_manage()
+    if len(trea_col) == 0:
+        treasure_manage()
 
     draw_man()
     
+    draw_trea()
+
     draw_maze()
 
     # Swap buffers for smooth rendering (double buffering)
