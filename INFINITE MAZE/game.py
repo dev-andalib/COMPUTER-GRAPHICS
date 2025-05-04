@@ -181,27 +181,31 @@ def wall_check(crr_pos, next_pos):
     
     
     for i in temp:
-        
+        global pass_through
         wx1, wy1, wx2, wy2 = i
-
-
+          
         if wx1 == wx2:
-            if min(x1, x2) <= wx1 <= max(x1, x2):
+                if min(x1, x2) <= wx1 <= max(x1, x2):
                 
-                if max(min(y1, y2), min(wy1, wy2)) <= min(max(y1, y2), max(wy1, wy2)):
-                    
-                    return "hit"
+                    if max(min(y1, y2), min(wy1, wy2)) <= min(max(y1, y2), max(wy1, wy2)):
+                        
+                        if pass_through and temp.index(i) not in [0,1,2,3]:
+                            pass_through = False
+                            return "norm"
+                        return "hit"
 
        
         elif wy1 == wy2:
-            if min(y1, y2) <= wy1 <= max(y1, y2):
+                if min(y1, y2) <= wy1 <= max(y1, y2):
                 
-                if max(min(x1, x2), min(wx1, wx2)) <= min(max(x1, x2), max(wx1, wx2)):
-                    
-                    return "hit"
+                    if max(min(x1, x2), min(wx1, wx2)) <= min(max(x1, x2), max(wx1, wx2)):
+                        if pass_through and temp.index(i) not in [0,1,2,3]:
+                            pass_through = False
+                            return "norm"
+                        return "hit"
         
-    else: 
-        return "norm"
+        else: 
+                return "norm"
 
 
 ##################################### Maze Wall ##########################################
@@ -212,9 +216,7 @@ def wall_check(crr_pos, next_pos):
 ############################################### Game stat ############################################
 game_r = True
 top_view = 3
-life = 10
-is_top = False
-immortal = False
+life = 3
 ############################################### Game stat ############################################
 
 
@@ -298,7 +300,7 @@ class Elixir:
         self.h = 40
         self.id = 1
         self.dis = 0
-        
+        self.rand = random.randint(5, 255)
 
 
     def draw(self):
@@ -316,18 +318,20 @@ class Elixir:
     
 
     def function_on(self):
+        
         global life, immortal
         life = 10
-        immortal = True 
-    
+        immortal = True
+        
+
+         
 
 
     def function_off(self):
         global immortal
         immortal = False
         
-
-    
+   
    
 class Avarice:
     def __init__(self, pos):
@@ -336,6 +340,7 @@ class Avarice:
         self.pos = pos
         self.id = 2
         self.dis = 0
+        self.rand = random.randint(5, 255)
 
         #power related var
         self.cam = None
@@ -360,10 +365,11 @@ class Avarice:
 
     
     def function_on(self, pos):
-        global is_top
-
-        is_top = True
-        self.cam = pos
+        global is_top, top_view
+        if not is_top and top_view > 0:
+            is_top = True
+            self.cam = pos
+        top_view -= 1
         return self.top
 
 
@@ -383,6 +389,10 @@ class Halo:
         self.pos = pos
         self.id = 3
         self.dis = 0
+        self.rand = random.randint(5, 255)
+
+
+        
        
 
     def draw(self):
@@ -393,6 +403,17 @@ class Halo:
         glutSolidTorus(self.inner_r, self.outer_r, 30, 60)
         glPopMatrix()
 
+
+    def function_on(self, man):
+        pos = man["head"]["position"]
+        man["halo"] = Halo([pos[0], pos[1], pos[2]+30])
+        
+
+    def function_off(self, man):
+        man["halo"] = None
+        
+        
+
 class Invince:
     def __init__(self, pos):
         self.inner_r = 5
@@ -400,7 +421,9 @@ class Invince:
         self.pos = pos
         self.id = 4
         self.dis = 0
-          
+        self.rand = random.randint(5, 255)
+        
+        
 
     def draw(self):
         # Draw the thinner, golden ring
@@ -419,6 +442,14 @@ class Invince:
         glutSolidOctahedron()
         glPopMatrix()
 
+    def function_on(self):
+        global pass_through
+        pass_through = True
+        
+
+is_top = False
+immortal = False
+pass_through = False
 
 
 trea_col = []
@@ -471,18 +502,9 @@ def draw_trea():
 
     for i in trea_col:
         i.draw()
+
 def remove_trea(i, col):
-    temp = []
-    for j in col:
-        if j != i:
-            temp.append(j)
-    col.clear()
-
-
-    for k in temp:
-        col.append(k)
-    
-    temp.clear()
+    col.pop(col.index(i))
     
 
 
@@ -499,24 +521,46 @@ def get_trea():
              
 
 def activate_power():
-    global trea_use, camera_pos
+    global trea_use, camera_pos, man
 
-    trea_use.append(Elixir([590, 710, 60]))
+    trea_use.append(Invince([590, 710, 60]))
+    
+    
+   
+
+
     # activation cond
     for i in trea_use:
         if i.id == 1:
             i.function_on()
-            remove_trea(i, trea_use)
-    print(immortal)
+        
+        elif i.id == 2:
+            
+            camera_pos = i.function_on(camera_pos)
+        
+        elif i.id == 3:
+            i.function_on(man)
+        
+        elif i.id == 4:
+            i.function_on()
     
 
 def deactivate_power():
-    global trea_use, camera_pos
-
-    # activation cond
+    global trea_use, camera_pos, man
+    
+    
     for i in trea_use:
-        if i.id == 2:
-            camera_pos = i.function_off()
+        if i.id == 1:
+            i.function_off()
+        elif i.id == 2:
+           camera_pos = i.function_off()
+        
+        elif i.id == 3:
+            i.function_off(man)
+        remove_trea(i, trea_use)
+
+
+    
 ####################### TREASSURES ###################################################
 
 
@@ -562,18 +606,24 @@ man = {
 
     "theta" : math.radians(-90),  # for movement direction
     "rot_theta" : 0, # angle of rotation about z-axis
-    "type" : "player"
+    "type" : "player",
+    "halo" : None,
 } 
 step_size = 5
 
 
 
 
+
 def draw_man():
-    global man
+    global man, immortal, rain
     
+    
+        
     #rotate as a whole
     glPushMatrix()
+
+
     body_pos = man["body"]["position"]
     center = body_pos[2] - (man["body"]["create"][2] / 2)  # base center of the cube
     
@@ -581,6 +631,18 @@ def draw_man():
     glRotatef(man["rot_theta"], 0, 0, 1)
     glTranslatef(-body_pos[0], -body_pos[1], -center)
     #arms 
+
+
+    if immortal:
+        glPushMatrix()
+        c = random.randint(0,1)
+        if c == 0:   glColor3f(144/255, 238/255, 144/255)
+        else:  glColor3f(0.133, 0.545, 0.133)
+        pos = man["head"]["position"]
+        glTranslatef(pos[0], pos[1], 2) 
+        gluCylinder(gluNewQuadric(),  50, 40, 0, 100, 100 ) 
+        gluCylinder(gluNewQuadric(),  30, 20, 0, 100, 100 )         
+        glPopMatrix()
 
     #right
     glPushMatrix()
@@ -663,6 +725,13 @@ def draw_man():
     r,s,st = man["head"]["create"]
     gluSphere(gluNewQuadric(), r, s, st)
     glPopMatrix()
+
+    if man["halo"] != None:
+        obj = man["halo"]
+        pos = man["head"]["position"]
+        obj.pos = [ pos[0], pos[1], pos[2]+30 ]        
+        obj.draw()
+
     glPopMatrix()
 
 def spawn(obj, x, y):
@@ -700,10 +769,13 @@ def spawn(obj, x, y):
 
 def keyboardListener(key, x, y):
 
-    global step_size
+    global step_size, is_top
 
     if key == b'p':
         activate_power()
+    
+    elif key == b'o':
+        deactivate_power()
         
         
     
@@ -719,7 +791,7 @@ def keyboardListener(key, x, y):
        
        
        stat = wall_check((curr_x, curr_y), (new_x, new_y))
-       if stat == 'hit':
+       if stat == 'hit' or top_view == True:
             x = 0
             y = 0
 
@@ -758,7 +830,7 @@ def keyboardListener(key, x, y):
        
 
        stat = wall_check((curr_x, curr_y), (new_x, new_y))
-       if stat == 'hit':
+       if stat == 'hit' or is_top == True:
             x = 0
             y = 0
 
@@ -782,7 +854,7 @@ def keyboardListener(key, x, y):
 
 
     # Rotate gun left (A key)
-    if key == b'd':
+    if key == b'd' and not is_top:
         man["rot_theta"] -= step_size 
         man["rot_theta"] %= 360
         man["theta"] = math.radians(man["rot_theta"] - 90)
@@ -791,7 +863,7 @@ def keyboardListener(key, x, y):
         
 
     # Rotate gun right (D key)
-    if key == b'a':
+    if key == b'a' and not is_top:
         man["rot_theta"] += step_size  
         man["rot_theta"] %= 360
         man["theta"] = math.radians(man["rot_theta"] - 90)
@@ -848,6 +920,7 @@ def idle():
         teleport()
         spawn(man, x, y)
 
+    
 
     get_trea()
     
