@@ -102,7 +102,7 @@ maze_wall= [[-800, 800, 800, 800],
             [-30, 300, -30, -250],
             [-250, -550, -250, 70],
             [-250, 70, -550, 70],
-            [-550, 70, -500, 320],
+            [-550, 70, -550, 320],
             [-800, -250, -250, -250],
             [-550, -800, -550, -500]]
 x_min = maze_wall[0][0]
@@ -166,6 +166,8 @@ def draw_maze():
 
 
     glPopMatrix()
+
+
 def wall_check(crr_pos, next_pos):
     global maze_wall
 
@@ -183,10 +185,11 @@ def wall_check(crr_pos, next_pos):
     for i in temp:
         global pass_through
         wx1, wy1, wx2, wy2 = i
-          
+        print(i)
         if wx1 == wx2:
-                if min(x1, x2) <= wx1 <= max(x1, x2):
                 
+                if min(x1, x2) <= wx1 <= max(x1, x2):
+                    
                     if max(min(y1, y2), min(wy1, wy2)) <= min(max(y1, y2), max(wy1, wy2)):
                         
                         if pass_through and temp.index(i) not in [0,1,2,3]:
@@ -414,7 +417,7 @@ class Halo:
         
         
 
-class Invince:
+class Perme:
     def __init__(self, pos):
         self.inner_r = 5
         self.outer_r = 30
@@ -493,7 +496,7 @@ def treasure_manage():
         
 
         elif treai == 4:
-            obj = Invince(coor[i])
+            obj = Perme(coor[i])
             trea_col.append(obj)
         
 
@@ -523,7 +526,7 @@ def get_trea():
 def activate_power():
     global trea_use, camera_pos, man
 
-    trea_use.append(Invince([590, 710, 60]))
+    trea_use.append(Avarice([590, 710, 60]))
     
     
    
@@ -552,6 +555,7 @@ def deactivate_power():
     for i in trea_use:
         if i.id == 1:
             i.function_off()
+
         elif i.id == 2:
            camera_pos = i.function_off()
         
