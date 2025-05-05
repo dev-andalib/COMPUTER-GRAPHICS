@@ -67,16 +67,22 @@ buttons = [
 paused = False
 
 def restart_game():
-    global man, life, trea_col, trea_use, trea_counts, game_r, paused, buttons
-    
+    global man, life, trea_col, trea_use, trea_counts, game_r, paused, buttons, top_view, stat
+    top_view = 3
     game_r = True
     buttons[0][id] = 'play'
     paused = False
     life = 5
     trea_col.clear()
     trea_use.clear()
-    for k in trea_counts.keys():
-        trea_counts[k] = 0
+    trea_use = [Avarice([552, 370,1]), Avarice([552, 370,1]), Avarice([552, 370,1])]
+    trea_counts = {
+    1: 0,
+    2: top_view,
+    3: 0,
+    4: 0
+    }
+
     
     ########################################### MAN ######################################
     man['head']['position'] = [50, 400, 80]
@@ -206,11 +212,11 @@ def draw_buttons():
 
 ##################################### Camera-related variables ##########################################
 camera_pos = (0, 500, 500)
-is_top = False
+
 
 fovY = 120  # Field of view
 GRID_LENGTH = 800  # Length of grid lines
-rand_var = 423
+
 
 
 def setupCamera():
@@ -230,14 +236,18 @@ def setupCamera():
     lx, ly, lz = (0, 0, 0)
 
 
+    if not is_top:
+        lx = man["head"]["position"][0] 
+        ly = man["head"]["position"][1] 
+        lz = man["head"]["position"][2] + 20
 
-    x = man["head"]["position"][0] + 50 * math.cos(man["theta"])
-    y = man["head"]["position"][1] + 50 * math.sin(man["theta"])
-    z = man["head"]["position"][2] + 20
-    look_ahead = 100
-    lx = x + look_ahead * math.cos(math.radians(man["rot_theta"] + math.radians(90)))
-    ly = y + look_ahead * math.sin(math.radians(man["rot_theta"] + math.radians(90)))
-    lz = z
+        offset = math.radians(90)  
+        cam = math.radians(man["rot_theta"]) - offset 
+        look_ahead = 100
+    
+        x = lx - look_ahead * math.cos(cam)
+        y = ly - look_ahead * math.sin(cam)
+        z = lz + 40
 
 
 
@@ -294,7 +304,7 @@ def draw_maze():
     glColor3f(0, 0, 1)  # Maze wall color (white)
 
     
-    wall_height = 80
+    wall_height = 180
 
     # Outer rectangle walls (top, bottom, left, right)
     def draw_wall(x1, y1, x2, y2):
@@ -345,8 +355,6 @@ def draw_maze():
 
 
     glPopMatrix()
-
-
 def wall_check(crr_pos, next_pos):
     global maze_wall
 
@@ -397,6 +405,7 @@ def wall_check(crr_pos, next_pos):
 game_r = True
 top_view = 3
 life = 5
+stat = 'con' # continue
 ############################################### Game stat ############################################
 
 
@@ -445,8 +454,6 @@ def draw_teleport(x1,y1, x2,y2):
     glColor3f(0,0,1)
     gluCylinder(gluNewQuadric(), 30  , 30 , 30 , 10, 10 )  
     glPopMatrix()
-
-
 def teleport():
     global tele_i1, tele_i2, tele_update, tele_dis, target_tele 
     
@@ -482,7 +489,7 @@ trea_names = {
 
 trea_counts = {
     1: 0,
-    2: 0,
+    2: top_view,
     3: 0,
     4: 0
 }
@@ -515,9 +522,10 @@ class Elixir:
 
     def function_on(self):
         
-        global life, immortal
+        global life, immortal, immortal_c
         life = 10
         immortal = True
+        immortal_c = 3
         
 
          
@@ -594,15 +602,18 @@ class Halo:
     def draw(self):
         glPushMatrix()
         glTranslatef(self.pos[0], self.pos[1], self.pos[2])
-        glColor3f(1.0, 0.84, 0.0)  # Golden color
+        glColor3f(1.0, 0.84, 0.0)  
         
         glutSolidTorus(self.inner_r, self.outer_r, 30, 60)
         glPopMatrix()
 
 
     def function_on(self, man):
+        global enemy_halo
+
         pos = man["head"]["position"]
         man["halo"] = Halo([pos[0], pos[1], pos[2]+30])
+        enemy_halo = 3
         
 
     def function_off(self, man):
@@ -646,7 +657,8 @@ class Perme:
 is_top = False
 immortal = False
 pass_through = False
-
+immortal_c = None
+enemy_halo = 3
 
 trea_col = []
 trea_cor = [(552, 370), (362,374), (378, 230), (-106, 380), 
@@ -656,8 +668,7 @@ treai = None
 sel_t1 = None
 sel_t2 = None
 
-trea_use = []
-
+trea_use = [Avarice([552, 370,1]), Avarice([552, 370,1]), Avarice([552, 370,1])]
 
 def treasure_manage():
     global treai, sel_t1, sel_t2, trea_col
@@ -692,7 +703,6 @@ def treasure_manage():
             obj = Perme(coor[i])
             trea_col.append(obj)
         
-
 def draw_trea():
     global trea_col
 
@@ -702,10 +712,8 @@ def draw_trea():
 def remove_trea(i, col):
     col.pop(col.index(i))
     
-
-
 def get_trea():
-    global trea_col, trea_use 
+    global trea_col, trea_use, top_view
     for i in trea_col: 
         pos = i.pos
         temp = math.pow(math.pow(man["head"]["position"][0] - pos[0], 2) + math.pow(man["head"]["position"][1] - pos[1], 2) , 0.5)
@@ -718,6 +726,7 @@ def get_trea():
 
             elif i.id == 2:
                 trea_counts[i.id] += 1
+                top_view += 1
             
 
             elif i.id == 3:
@@ -731,7 +740,6 @@ def get_trea():
 
             remove_trea(i, trea_col)
              
-
 def activate_power(tid):
     global trea_use, camera_pos, man
 
@@ -748,8 +756,10 @@ def activate_power(tid):
         
     elif i.id == 2 and  trea_counts[i.id]>0:
         camera_pos = i.function_on(camera_pos)
+        
         if i.id == 2:
             trea_counts[i.id] -= 1
+
         
     elif i.id == 3 and  trea_counts[i.id]>0:
         i.function_on(man)
@@ -762,29 +772,31 @@ def activate_power(tid):
             trea_counts[i.id] -= 1
             remove_trea(i, trea_use)
     
-    
-
 def deactivate_power(tid):
     global trea_use, camera_pos, man
     
-    for i in trea_use:
-        i.id = tid
-        break
+    i = None
+    for obj in trea_use:
+        if obj.id == tid:
+            i = obj
+            break
+            
 
-    
-    if i.id == 1:
-        i.function_off()
+    if i != None:
+        if i.id == 1:
+            i.function_off()
+            remove_trea(i, trea_use)
 
-    elif i.id == 2:
-        camera_pos = i.function_off()
+        elif i.id == 2:
+            camera_pos = i.function_off()
+            remove_trea(i, trea_use)
         
-    elif i.id == 3:
-        i.function_off(man)
-    remove_trea(i, trea_use)
-
-
-    
+        elif i.id == 3:
+            i.function_off(man)
+            remove_trea(i, trea_use)  
 ####################### TREASSURES ###################################################
+
+
 
 
 ################################ MAN #########################################################
@@ -989,8 +1001,50 @@ def spawn(obj, x, y):
 frame_count = 0
 enemy_positions = []
 enemy_paths = []  # Store paths for each enemy
-enemy_speeds = [0.3 for _ in range(3)]  # Increased speed for noticeable movement
+enemy_speeds = [0.7 for _ in range(3)]  # Increased speed for noticeable movement
 
+def enemy_hurt():
+    global enemy_positions, man, life, immortal_c, enemy_halo
+    min_dis = 1000000  # very big number
+    enemy = None
+    for i in enemy_positions:
+        x1 = i[0]
+        y1 = i[1]
+
+        x2 = man["head"]["position"][0]
+        y2 = man["head"]["position"][1]
+
+        temp = math.pow(math.pow((x1-x2), 2)+math.pow((y1-y2), 2), 1/2)
+        
+        if temp < min_dis:
+            min_dis = temp
+            enemy = i
+        
+    if enemy_halo == 0:
+            deactivate_power(3)
+    
+    
+    
+    if min_dis < 50:
+        
+        if immortal:
+            immortal_c -= 1
+            spawn_enemies()
+        
+        
+        elif not immortal:
+            life -= 1
+            enemy_positions.pop(enemy_positions.index(enemy))
+            if len(enemy_positions) == 0:
+                spawn_enemies()
+
+        
+        elif enemy_halo > 0:
+            enemy_halo -= 1
+            enemy_positions.pop(enemy_positions.index(enemy))
+            if len(enemy_positions) == 0:
+                spawn_enemies()
+        
 
 def is_valid_position(x, y, buffer=30):
     for wall in maze_wall:
@@ -1069,6 +1123,8 @@ def update_enemy_paths():
 
 
 def move_enemy(enemy_idx):
+    global is_top, paused
+
     if not enemy_paths[enemy_idx]:
         return
 
@@ -1084,6 +1140,8 @@ def move_enemy(enemy_idx):
         enemy_paths[enemy_idx].pop(0)
     else:
         move_dist = enemy_speeds[enemy_idx] / dist
+        if paused or is_top:
+            move_dist = 0
         enemy_pos[0] += dx * move_dist
         enemy_pos[1] += dy * move_dist
 
@@ -1110,8 +1168,10 @@ def draw_enemy(x, y):
 
 def keyboardListener(key, x, y):
 
-    global step_size, is_top, paused
+    global step_size, is_top, paused, top_view, trea_use
 
+    
+        
        
      # Move forward (W key)
     if key == b'w' and not paused  and not is_top:
@@ -1125,7 +1185,7 @@ def keyboardListener(key, x, y):
        
        
        stat = wall_check((curr_x, curr_y), (new_x, new_y))
-       if stat == 'hit' or top_view == True:
+       if stat == 'hit' or is_top == True:
             x = 0
             y = 0
 
@@ -1189,7 +1249,7 @@ def keyboardListener(key, x, y):
 
     # Rotate gun left (A key)
     if key == b'd' and not is_top and not paused:
-        man["rot_theta"] -= step_size 
+        man["rot_theta"] -= step_size
         man["rot_theta"] %= 360
         man["theta"] = math.radians(man["rot_theta"] - 90)
         
@@ -1198,7 +1258,7 @@ def keyboardListener(key, x, y):
 
     # Rotate gun right (D key)
     if key == b'a' and not is_top and not paused:
-        man["rot_theta"] += step_size  
+        man["rot_theta"] += step_size
         man["rot_theta"] %= 360
         man["theta"] = math.radians(man["rot_theta"] - 90)
 
@@ -1229,7 +1289,7 @@ def specialKeyListener(key, x, y):
 
 
 def mouseListener(button, state, x, y):
-    global paused, buttons, is_top
+    global paused, buttons, is_top, stat
     
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         if 740 < x < 985 and 100 < y < 115 and trea_counts[1]>0:
@@ -1263,7 +1323,7 @@ def mouseListener(button, state, x, y):
         
 
         elif 540 < x < 565 and 120 < y < 150:
-            game_exit = True
+            stat = "EXIT"
         
 
     # # Right mouse button toggles camera tracking mode
@@ -1271,10 +1331,35 @@ def mouseListener(button, state, x, y):
             deactivate_power(2)
 
 
+def win():
+    global man, stat
+    x = man["head"]["position"][0]
+    
 
+    if x < -800 or x > 800:
+        stat ="WINNER"
+        glColor3f(0, 1.0, 0)
+        draw_text(10, 700, f"Game Stat: {stat}")
+    
+    elif life == 0:
+        stat = "LOSER"
+        glColor3f(1.0, 0, 0)
+        draw_text(10, 700, f"Game Stat: {stat}")
+    
+    elif stat == "EXIT":
+        glColor3f(1.0, 0, 0)
+        draw_text(10, 700, f"Game Stat: {stat}")
+
+    
+    
+    
 
 def idle():
-    global tele_update, tele_dis, tele_i1, tele_i2
+    global tele_update, tele_dis, tele_i1, tele_i2, immortal_c
+
+    enemy_hurt()
+    if immortal_c == 0:
+        deactivate_power(1)
 
     update_enemy_paths()
     for i in range(len(enemy_positions)):
@@ -1295,6 +1380,8 @@ def idle():
     
 
     get_trea()
+
+    
     
     glutPostRedisplay()
 
@@ -1303,6 +1390,8 @@ def idle():
 def showScreen():
     global game_r, tele_update, trea_col, enemy_positions
     # Clear color and depth buffers
+    glEnable(GL_DEPTH_TEST)  
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix
     glViewport(0, 0, 1000, 800)  # Set viewport size
@@ -1310,70 +1399,75 @@ def showScreen():
     setupCamera()  # Configure camera perspective
 
     # Draw a random points
+
+
+
     glPointSize(20)
     glBegin(GL_POINTS)
     glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
     glEnd()
 
-    # Draw the grid (game floor)
-    glBegin(GL_QUADS)
 
-    glColor3f(1, 1, 1)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
 
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
 
-    glColor3f(0.7, 0.5, 0.95)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glEnd()
-
-    # Display game info text at a fixed screen position
-    glColor3f(1.0, 1.0, 1.0)
-    draw_text(10, 680, f"Top View Count: {top_view}")
-    draw_text(10, 650, f"Lives: {life}")
 
 
     
+
     
+    win()
 
-    if game_r:
-        game_r = False
-        tele_update = True
-        
+
+    if stat == 'con':
+
+        ####################### CODE START ###############################
+        # Draw the grid (game floor)
+        glBegin(GL_QUADS)
+
+        glColor3f(1, 1, 1)
+        glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+        glVertex3f(0, GRID_LENGTH, 0)
+        glVertex3f(0, 0, 0)
+        glVertex3f(-GRID_LENGTH, 0, 0)
+
+        glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
+        glVertex3f(0, -GRID_LENGTH, 0)
+        glVertex3f(0, 0, 0)
+        glVertex3f(GRID_LENGTH, 0, 0)
+
+        glColor3f(0.7, 0.5, 0.95)
+        glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
+        glVertex3f(-GRID_LENGTH, 0, 0)
+        glVertex3f(0, 0, 0)
+        glVertex3f(0, -GRID_LENGTH, 0)
+
+        glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
+        glVertex3f(GRID_LENGTH, 0, 0)
+        glVertex3f(0, 0, 0)
+        glVertex3f(0, GRID_LENGTH, 0)
+        glEnd()
+
+        # Display game info text at a fixed screen position
+        glColor3f(1.0, 1.0, 1.0)
+        draw_text(10, 680, f"Lives: {life}")
+        glColor3f(1.0, 1.0, 1.0)
+        draw_text(10, 700, f"Game Stat: Continue")
+        if game_r:
+            game_r = False
+            tele_update = True
+        teleport()
+        if len(trea_col) == 0:
+            treasure_manage()
+        draw_man()
+        draw_trea()
+        for pos in enemy_positions:
+            draw_enemy(pos[0], pos[1])
+        draw_maze()
+        draw_trea_status()
+        glDisable(GL_DEPTH_TEST)
+        draw_buttons()
     
-    teleport()
     
-    if len(trea_col) == 0:
-        treasure_manage()
-
-    draw_man()
-    
-    draw_trea()
-
-    for pos in enemy_positions:
-        draw_enemy(pos[0], pos[1])
-
-    draw_maze()
-
-
-    draw_buttons()
-
-    draw_trea_status()
-
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
 
