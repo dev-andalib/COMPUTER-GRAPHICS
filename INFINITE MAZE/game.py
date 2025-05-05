@@ -166,6 +166,8 @@ def draw_maze():
 
 
     glPopMatrix()
+
+    
 def wall_check(crr_pos, next_pos):
     global maze_wall
 
