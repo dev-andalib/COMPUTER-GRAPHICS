@@ -2,7 +2,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math, random
-
+from heapq import heappush, heappop
 
 
 ######################################### Print on Screen ################################################
@@ -30,9 +30,176 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
+
+
+def draw_trea_status():
+    y_offset = 0
+
+    for tid in sorted(trea_names.keys()):
+        name = trea_names[tid]
+        count = trea_counts.get(tid, 0)  # Default to 0 if not yet collected
+        text = f"{name}: {count}"
+
+        # Set color: yellow if count > 0, else white
+        if count > 0:
+            glColor3f(1.0, 1.0, 0.0)  # Bright yellow
+        else:
+            glColor3f(1.0, 1.0, 1.0)  # White
+
+        draw_text(740, 680 - y_offset, text)
+        y_offset += 25
+
 ######################################### Print on Screen ################################################
 
 
+
+
+
+######################################## Buttons ##############################################
+buttons = [
+    {"id": "pause",   "x": 440, "y": 650, "w": 30, "h": 30},
+    {"id": "restart", "x": 490, "y": 650, "w": 30, "h": 30},
+    {"id": "exit",    "x": 540, "y": 650, "w": 30, "h": 30},
+]
+
+
+
+paused = False
+
+def restart_game():
+    global man, life, trea_col, trea_use, trea_counts, game_r, paused, buttons
+    
+    game_r = True
+    buttons[0][id] = 'play'
+    paused = False
+    life = 5
+    trea_col.clear()
+    trea_use.clear()
+    for k in trea_counts.keys():
+        trea_counts[k] = 0
+    
+    ########################################### MAN ######################################
+    man['head']['position'] = [50, 400, 80]
+    man['body']['position'] = [50, 400, 80-20-25]
+    for i in range(len(man["legs"])):
+        if i == 0:
+            man["legs"][i]["position"] = [50 + 8, 400, 45 - 15 - 10]
+        else:
+            man["legs"][i]["position"] = [50 - 8, 400, 45 - 15 - 10]
+    
+    for i in range(len(man["arms"])):
+        if i == 0:
+            man["arms"][i]["position"] = [50 + 20, 400, 45 ]
+        else:
+            man["arms"][i]["position"] = [50 - 20, 400, 45 ]
+
+    man["theta"] =  math.radians(-90)
+    man["rot_theta"] = 0
+    man["halo"] = None
+    
+    main()
+
+def draw_buttons():
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    gluOrtho2D(0, 1000, 0, 800)  # Match your window size
+
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+
+    
+    for btn in buttons:
+        x, y, w, h = btn["x"], btn["y"], btn["w"], btn["h"]
+        cx = x + w / 2
+        cy = y + h / 2
+
+        # Draw rounded background (simple rectangle for now)
+        glColor3f(0.2, 0.2, 0.2)  # Dark background
+        glBegin(GL_QUADS)
+        glVertex2f(x, y)
+        glVertex2f(x + w, y)
+        glVertex2f(x + w, y + h)
+        glVertex2f(x, y + h)
+        glEnd()
+
+        # Border
+        glColor3f(0.9, 0.9, 0.9)
+        glLineWidth(2)
+        glBegin(GL_LINE_LOOP)
+        glVertex2f(x, y)
+        glVertex2f(x + w, y)
+        glVertex2f(x + w, y + h)
+        glVertex2f(x, y + h)
+        glEnd()
+
+        
+        # Draw icon
+        if btn["id"] == "play":
+            glColor3f(0.0, 1.0, 0.5)
+            glPushMatrix()
+            glTranslatef(cx, cy, 0)
+            glRotatef(180, 0, 0, 1)
+            glBegin(GL_TRIANGLES)
+            glVertex2f(-10, -10)
+            glVertex2f(10, 0)
+            glVertex2f(-10, 10)
+            glEnd()
+            glPopMatrix()
+        
+        if btn["id"] == "pause":
+            glColor3f(0.0, 1.0, 0.5) 
+            glPushMatrix()
+            glTranslatef(cx, cy, 0)   
+            glBegin(GL_QUADS)
+                
+            glVertex2f(-8, -10)
+            glVertex2f(-4, -10)
+            glVertex2f(-4, 10)
+            glVertex2f(-8, 10)
+
+           
+            glVertex2f(4, -10)
+            glVertex2f(8, -10)
+            glVertex2f(8, 10)
+            glVertex2f(4, 10)
+            glEnd()
+
+            glPopMatrix()
+
+        elif btn["id"] == "restart":
+            glColor3f(0.3, 0.8, 1.0)
+            # Circular arrow
+            glBegin(GL_LINE_STRIP)
+            for angle in range(0, 270, 15):
+                rad = math.radians(angle)
+                glVertex2f(cx + 10 * math.cos(rad), cy + 10 * math.sin(rad))
+            glEnd()
+
+            glBegin(GL_TRIANGLES)
+            glVertex2f(cx + 5, cy)
+            glVertex2f(cx + 12, cy + 5)
+            glVertex2f(cx + 12, cy - 5)
+            glEnd()
+
+
+        elif btn["id"] == "exit":
+            glColor3f(1.0, 0.4, 0.4)
+            glLineWidth(3)
+            glBegin(GL_LINES)
+            glVertex2f(x + 8, y + 8)
+            glVertex2f(x + w - 8, y + h - 8)
+            glVertex2f(x + w - 8, y + 8)
+            glVertex2f(x + 8, y + h - 8)
+            glEnd()
+
+    # Restore previous matrix modes
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+######################################## Buttons ##############################################
 
 
 
@@ -64,8 +231,6 @@ def setupCamera():
     gluLookAt(x, y, z,  # Camera position
               0, 0, 0,  # Look-at target
               0, 0, 1)  # Up vector (z-axis)
-
-
 ##################################### Camera-related variables ##########################################
 
 
@@ -185,7 +350,7 @@ def wall_check(crr_pos, next_pos):
     for i in temp:
         global pass_through
         wx1, wy1, wx2, wy2 = i
-        print(i)
+        
         if wx1 == wx2:
                 
                 if min(x1, x2) <= wx1 <= max(x1, x2):
@@ -209,8 +374,6 @@ def wall_check(crr_pos, next_pos):
         
         else: 
                 return "norm"
-
-
 ##################################### Maze Wall ##########################################
 
 
@@ -219,7 +382,7 @@ def wall_check(crr_pos, next_pos):
 ############################################### Game stat ############################################
 game_r = True
 top_view = 3
-life = 3
+life = 5
 ############################################### Game stat ############################################
 
 
@@ -296,6 +459,22 @@ def teleport():
 
 
 ######################################### TREASSURES ###################################################
+trea_names = {
+    1: "ELIXIR OF IMMORTALITY",
+    2: "EYE OF AVARICE",
+    3: "HALO OF INVINCIBILITY",
+    4: "RING OF PERMEATION"
+}
+
+trea_counts = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0
+}
+
+
+
 class Elixir:
     def __init__(self, pos):
         self.pos = pos
@@ -512,68 +691,95 @@ def remove_trea(i, col):
 
 
 def get_trea():
-    global trea_col, trea_use
-    for i in trea_col:
+    global trea_col, trea_use 
+    for i in trea_col: 
         pos = i.pos
         temp = math.pow(math.pow(man["head"]["position"][0] - pos[0], 2) + math.pow(man["head"]["position"][1] - pos[1], 2) , 0.5)
         i.dis = temp
 
         if i.dis < 50:
             trea_use.append(i)
+            if i.id == 1:
+                trea_counts[i.id] += 1
+
+            elif i.id == 2:
+                trea_counts[i.id] += 1
+            
+
+            elif i.id == 3:
+                trea_counts[i.id] += 1
+
+            
+            elif i.id == 4:
+                trea_counts[i.id] += 1
+
+
+
             remove_trea(i, trea_col)
              
 
-def activate_power():
+def activate_power(tid):
     global trea_use, camera_pos, man
 
-    trea_use.append(Avarice([590, 710, 60]))
+    for obj in trea_use:
+        if obj.id == tid:
+            i = obj
+            break
     
     
-   
-
-
-    # activation cond
-    for i in trea_use:
+    if i.id == 1 and  trea_counts[i.id]>0:
+        i.function_on()
         if i.id == 1:
-            i.function_on()
+            trea_counts[i.id] -= 1
         
-        elif i.id == 2:
-            
-            camera_pos = i.function_on(camera_pos)
+    elif i.id == 2 and  trea_counts[i.id]>0:
+        camera_pos = i.function_on(camera_pos)
+        if i.id == 2:
+            trea_counts[i.id] -= 1
         
-        elif i.id == 3:
-            i.function_on(man)
+    elif i.id == 3 and  trea_counts[i.id]>0:
+        i.function_on(man)
+        if i.id == 3:
+            trea_counts[i.id] -= 1
         
-        elif i.id == 4:
-            i.function_on()
+    elif i.id == 4 and  trea_counts[i.id]>0:
+        i.function_on()
+        if i.id == 4:
+            trea_counts[i.id] -= 1
+            remove_trea(i, trea_use)
+    
     
 
-def deactivate_power():
+def deactivate_power(tid):
     global trea_use, camera_pos, man
     
-    
     for i in trea_use:
-        if i.id == 1:
-            i.function_off()
+        i.id = tid
+        break
 
-        elif i.id == 2:
-           camera_pos = i.function_off()
+    
+    if i.id == 1:
+        i.function_off()
+
+    elif i.id == 2:
+        camera_pos = i.function_off()
         
-        elif i.id == 3:
-            i.function_off(man)
-        remove_trea(i, trea_use)
+    elif i.id == 3:
+        i.function_off(man)
+    remove_trea(i, trea_use)
 
 
     
 ####################### TREASSURES ###################################################
 
 
-
+################################ MAN #########################################################
 man = {
     "head" : {"create": [20, 10, 10], 
               "color": (0.0, 1.0, 1.0), 
               "position": [50, 400, 80]},
     
+
     "body" : {"create": [30, 30, 50], 
               "color" : (0.04, 0.47, 0.19), 
               "position" :[50, 400, 80-20-25]},
@@ -614,11 +820,6 @@ man = {
     "halo" : None,
 } 
 step_size = 5
-
-
-
-
-
 def draw_man():
     global man, immortal, rain
     
@@ -737,7 +938,6 @@ def draw_man():
         obj.draw()
 
     glPopMatrix()
-
 def spawn(obj, x, y):
     global tele_i2, tele_i1, tele_cor,  target_tele
     
@@ -767,24 +967,140 @@ def spawn(obj, x, y):
 
            l["position"][1] = y
            i += 1
+################################ MAN #########################################################
 
 
+
+############################## ENEMY #####################################################
+frame_count = 0
+enemy_positions = []
+enemy_paths = []  # Store paths for each enemy
+enemy_speeds = [0.3 for _ in range(3)]  # Increased speed for noticeable movement
+
+
+def is_valid_position(x, y, buffer=30):
+    for wall in maze_wall:
+        x1, y1, x2, y2 = wall
+        if min(x1, x2) - buffer <= x <= max(x1, x2) + buffer and min(y1, y2) - buffer <= y <= max(y1, y2) + buffer:
+            return False
+    return True
+
+
+def spawn_enemies(n=3):
+    global enemy_paths
+    attempts = 0
+    enemy_positions.clear()
+    enemy_paths = [[] for _ in range(n)]
+    while len(enemy_positions) < n and attempts < 1000:
+        x = random.randint(-700, 700)
+        y = random.randint(-700, 700)
+        if is_valid_position(x, y, buffer=100):  # Larger buffer for spawning
+            enemy_positions.append([x, y])
+        attempts += 1
+
+
+def heuristic(a, b):
+    return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+
+
+def get_neighbors(pos, grid_size=30):
+    x, y = pos
+    neighbors = [
+        (x + grid_size, y), (x - grid_size, y),
+        (x, y + grid_size), (x, y - grid_size)
+    ]
+    return [(nx, ny) for nx, ny in neighbors if -800 <= nx <= 800 and -800 <= ny <= 800 and is_valid_position(nx, ny)]
+
+
+def a_star(start, goal, grid_size=30):
+    start = (round(start[0] / grid_size) * grid_size, round(start[1] / grid_size) * grid_size)
+    goal = (round(goal[0] / grid_size) * grid_size, round(goal[1] / grid_size) * grid_size)
+
+    open_set = [(0, start)]
+    came_from = {}
+    g_score = {start: 0}
+    f_score = {start: heuristic(start, goal)}
+
+    while open_set:
+        current_f, current = heappop(open_set)
+
+        if heuristic(current, goal) < grid_size:
+            path = []
+            while current in came_from:
+                path.append(current)
+                current = came_from[current]
+            path.reverse()
+            return path
+
+        for neighbor in get_neighbors(current, grid_size):
+            tentative_g = g_score[current] + heuristic(current, neighbor)
+
+            if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                f_score[neighbor] = tentative_g + heuristic(neighbor, goal)
+                heappush(open_set, (f_score[neighbor], neighbor))
+
+    return []
+
+
+def update_enemy_paths():
+    global frame_count
+    if frame_count % 10 == 0:  
+        player_pos = man["body"]["position"][:2]
+        for i, enemy_pos in enumerate(enemy_positions):
+            path = a_star((enemy_pos[0], enemy_pos[1]), player_pos)
+            enemy_paths[i] = path
+    frame_count += 1
+
+
+def move_enemy(enemy_idx):
+    if not enemy_paths[enemy_idx]:
+        return
+
+    enemy_pos = enemy_positions[enemy_idx]
+    target = enemy_paths[enemy_idx][0]
+
+    dx = target[0] - enemy_pos[0]
+    dy = target[1] - enemy_pos[1]
+    dist = math.sqrt(dx ** 2 + dy ** 2)
+
+    if dist < enemy_speeds[enemy_idx]:
+        enemy_pos[0], enemy_pos[1] = target
+        enemy_paths[enemy_idx].pop(0)
+    else:
+        move_dist = enemy_speeds[enemy_idx] / dist
+        enemy_pos[0] += dx * move_dist
+        enemy_pos[1] += dy * move_dist
+
+def draw_enemy(x, y):
+    glPushMatrix()
+    glTranslatef(x, y, 30)
+    glColor3f(1, 0, 0)
+    gluSphere(gluNewQuadric(), 30, 20, 20)
+    glPushMatrix()
+    glColor3f(0.8, 0.8, 0.1)
+    glTranslatef(-15, 0, 30)
+    glRotatef(-90, 1, 0, 0)
+    gluCylinder(gluNewQuadric(), 5, 1, 30, 10, 10)
+    glPopMatrix()
+    glPushMatrix()
+    glColor3f(0.8, 0.8, 0.1)
+    glTranslatef(15, 0, 30)
+    glRotatef(-90, 1, 0, 0)
+    gluCylinder(gluNewQuadric(), 5, 1, 30, 10, 10)
+    glPopMatrix()
+    glPopMatrix()
+############################## ENEMY #####################################################
 
 
 def keyboardListener(key, x, y):
 
-    global step_size, is_top
+    global step_size, is_top, paused
 
-    if key == b'p':
-        activate_power()
-    
-    elif key == b'o':
-        deactivate_power()
-        
-        
-    
+       
      # Move forward (W key)
-    if key == b'w':
+    if key == b'w' and not paused  and not is_top:
        curr_x, curr_y = man["head"]["position"][0], man["head"]["position"][1]
        x = step_size * math.cos(man["theta"])
        y = step_size * math.sin(man["theta"])
@@ -822,7 +1138,7 @@ def keyboardListener(key, x, y):
 
 
     # Move backward (S key)
-    if key == b's':
+    if key == b's' and not paused  and not is_top:
        curr_x, curr_y = man["head"]["position"][0], man["head"]["position"][1]
 
 
@@ -858,7 +1174,7 @@ def keyboardListener(key, x, y):
 
 
     # Rotate gun left (A key)
-    if key == b'd' and not is_top:
+    if key == b'd' and not is_top and not paused:
         man["rot_theta"] -= step_size 
         man["rot_theta"] %= 360
         man["theta"] = math.radians(man["rot_theta"] - 90)
@@ -867,7 +1183,7 @@ def keyboardListener(key, x, y):
         
 
     # Rotate gun right (D key)
-    if key == b'a' and not is_top:
+    if key == b'a' and not is_top and not paused:
         man["rot_theta"] += step_size  
         man["rot_theta"] %= 360
         man["theta"] = math.radians(man["rot_theta"] - 90)
@@ -899,13 +1215,46 @@ def specialKeyListener(key, x, y):
 
 
 def mouseListener(button, state, x, y):
-    print(x, y)
-    # # Left mouse button fires a bullet
-    # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+    global paused, buttons, is_top
+    
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        if 740 < x < 985 and 100 < y < 115 and trea_counts[1]>0:
+           activate_power(1)
+        
+        elif 740 < x < 915 and 125 < y < 145 and trea_counts[2]>0:
+           activate_power(2)
+        
+
+        elif 740 < x < 975 and 155 < y < 170 and trea_counts[3]>0:
+           activate_power(3)
+
+        elif 740 < x < 960 and 180 < y < 200 and trea_counts[4]>0:
+           activate_power(4)
+        
+
+        elif 440 < x < 470 and 120 < y < 150:
+            
+            if paused == False:
+                paused = True
+                buttons[0]['id'] = 'play'
+            
+            elif paused == True:
+                paused = False
+                buttons[0]['id'] = 'pause'
+            
+            
+        
+        elif 490 < x < 520 and 120 < y < 150:
+            restart_game()
+        
+
+        elif 540 < x < 565 and 120 < y < 150:
+            game_exit = True
+        
 
     # # Right mouse button toggles camera tracking mode
-    # if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
-
+    if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN and is_top:
+            deactivate_power(2)
 
 
 
@@ -933,7 +1282,7 @@ def idle():
 
 
 def showScreen():
-    global game_r, tele_update, trea_col
+    global game_r, tele_update, trea_col, enemy_positions
     # Clear color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix
@@ -974,13 +1323,15 @@ def showScreen():
     glEnd()
 
     # Display game info text at a fixed screen position
-    draw_text(10, 770, f"A Random Fixed Position Text")
-    draw_text(10, 740, f"See how the position and variable change?: {rand_var}")
+    glColor3f(1.0, 1.0, 1.0)
+    draw_text(10, 680, f"Top View Count: {top_view}")
+    draw_text(10, 650, f"Lives: {life}")
 
 
     if game_r:
         game_r = False
         tele_update = True
+        
     
     teleport()
     
@@ -991,7 +1342,15 @@ def showScreen():
     
     draw_trea()
 
+    for pos in enemy_positions:
+        draw_enemy(pos[0], pos[1])
+
     draw_maze()
+
+
+    draw_buttons()
+
+    draw_trea_status()
 
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
