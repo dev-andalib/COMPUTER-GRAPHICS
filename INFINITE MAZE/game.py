@@ -227,9 +227,23 @@ def setupCamera():
 
     # Extract camera position and look-at target
     x, y, z = camera_pos
+    lx, ly, lz = (0, 0, 0)
+
+
+
+    x = man["head"]["position"][0] + 50 * math.cos(man["theta"])
+    y = man["head"]["position"][1] + 50 * math.sin(man["theta"])
+    z = man["head"]["position"][2] + 20
+    look_ahead = 100
+    lx = x + look_ahead * math.cos(math.radians(man["rot_theta"] + math.radians(90)))
+    ly = y + look_ahead * math.sin(math.radians(man["rot_theta"] + math.radians(90)))
+    lz = z
+
+
+
     # Position the camera and set its orientation
     gluLookAt(x, y, z,  # Camera position
-              0, 0, 0,  # Look-at target
+              lx, ly, lz,  # Look-at target
               0, 0, 1)  # Up vector (z-axis)
 ##################################### Camera-related variables ##########################################
 
@@ -1261,6 +1275,11 @@ def mouseListener(button, state, x, y):
 
 def idle():
     global tele_update, tele_dis, tele_i1, tele_i2
+
+    update_enemy_paths()
+    for i in range(len(enemy_positions)):
+        move_enemy(i)
+
     if tele_dis < 70:
         
         if target_tele == 1:
@@ -1328,6 +1347,9 @@ def showScreen():
     draw_text(10, 650, f"Lives: {life}")
 
 
+    
+    
+
     if game_r:
         game_r = False
         tele_update = True
@@ -1369,7 +1391,7 @@ def main():
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
     glutIdleFunc(idle)  # Register the idle function to move the bullet automatically
-
+    spawn_enemies()
     glutMainLoop()  # Enter the GLUT main loop
 
 
