@@ -48,7 +48,6 @@ def draw_trea_status():
 
         draw_text(740, 680 - y_offset, text)
         y_offset += 25
-
 ######################################### Print on Screen ################################################
 
 
@@ -62,8 +61,6 @@ buttons = [
     {"id": "exit",    "x": 540, "y": 650, "w": 30, "h": 30},
 ]
 
-
-
 paused = False
 
 def restart_game():
@@ -75,6 +72,7 @@ def restart_game():
     life = 5
     trea_col.clear()
     trea_use.clear()
+    
     trea_use = [Avarice([552, 370,1]), Avarice([552, 370,1]), Avarice([552, 370,1])]
     trea_counts = {
     1: 0,
@@ -103,7 +101,7 @@ def restart_game():
     man["rot_theta"] = 0
     man["halo"] = None
     
-    main()
+    
 
 def draw_buttons():
     glMatrixMode(GL_PROJECTION)
@@ -213,13 +211,13 @@ def draw_buttons():
 ##################################### Camera-related variables ##########################################
 camera_pos = (0, 500, 500)
 
-
 fovY = 120  # Field of view
 GRID_LENGTH = 800  # Length of grid lines
 
-
-
 def setupCamera():
+    global camera_pos
+
+    
     """
     Configures the camera's projection and view settings.
     Uses a perspective projection and positions the camera to look at the target.
@@ -232,7 +230,10 @@ def setupCamera():
     glLoadIdentity()  # Reset the model-view matrix
 
     # Extract camera position and look-at target
-    x, y, z = camera_pos
+    
+    x = camera_pos[0]
+    y = camera_pos[1]
+    z = camera_pos[2]
     lx, ly, lz = (0, 0, 0)
 
 
@@ -486,15 +487,12 @@ trea_names = {
     3: "HALO OF INVINCIBILITY",
     4: "RING OF PERMEATION"
 }
-
 trea_counts = {
     1: 0,
     2: top_view,
     3: 0,
     4: 0
 }
-
-
 
 class Elixir:
     def __init__(self, pos):
@@ -503,7 +501,7 @@ class Elixir:
         self.h = 40
         self.id = 1
         self.dis = 0
-        self.rand = random.randint(5, 255)
+        
 
 
     def draw(self):
@@ -533,10 +531,7 @@ class Elixir:
 
     def function_off(self):
         global immortal
-        immortal = False
-        
-   
-   
+        immortal = False 
 class Avarice:
     def __init__(self, pos):
         self.Beye = 20
@@ -544,7 +539,7 @@ class Avarice:
         self.pos = pos
         self.id = 2
         self.dis = 0
-        self.rand = random.randint(5, 255)
+        
 
         #power related var
         self.cam = None
@@ -555,17 +550,11 @@ class Avarice:
     def draw(self):
         glPushMatrix()
         glTranslatef(self.pos[0], self.pos[1], self.pos[2])
-        glColor3f(1.0, 1.0, 1.0)  # White
+        glColor3f(0.6, 0.6, 0.6)  # White
         glScalef(1.5, 1.0, 1.0)  # Stretch horizontally (X-axis)
         glutSolidSphere(self.Beye, 50, 50)
         glPopMatrix()
-
-        # iris,red, stretched(glscalef)
-        glPushMatrix()
-        glTranslatef(self.pos[0], self.pos[1], self.pos[2])
-        glColor3f(1.0, 0.0, 0.0)
-        glutSolidSphere(self.Seye, 50, 50)
-        glPopMatrix()
+        
 
     
     def function_on(self, pos):
@@ -580,12 +569,8 @@ class Avarice:
 
     def function_off(self):
         global is_top
-
         is_top = False
         return self.cam
-        
-            
-
 class Halo:
     def __init__(self, pos):
         self.inner_r = 5
@@ -593,7 +578,7 @@ class Halo:
         self.pos = pos
         self.id = 3
         self.dis = 0
-        self.rand = random.randint(5, 255)
+        
 
 
         
@@ -618,9 +603,6 @@ class Halo:
 
     def function_off(self, man):
         man["halo"] = None
-        
-        
-
 class Perme:
     def __init__(self, pos):
         self.inner_r = 5
@@ -628,7 +610,7 @@ class Perme:
         self.pos = pos
         self.id = 4
         self.dis = 0
-        self.rand = random.randint(5, 255)
+        
         
         
 
@@ -652,22 +634,18 @@ class Perme:
     def function_on(self):
         global pass_through
         pass_through = True
-        
-
+       
 is_top = False
 immortal = False
 pass_through = False
 immortal_c = None
-enemy_halo = 3
-
+enemy_halo = 0
 trea_col = []
 trea_cor = [(552, 370), (362,374), (378, 230), (-106, 380), 
             (324, 533), (-559, -121), (273, -241), (86, -250)]
-
 treai = None
 sel_t1 = None
 sel_t2 = None
-
 trea_use = [Avarice([552, 370,1]), Avarice([552, 370,1]), Avarice([552, 370,1])]
 
 def treasure_manage():
@@ -701,24 +679,21 @@ def treasure_manage():
 
         elif treai == 4:
             obj = Perme(coor[i])
-            trea_col.append(obj)
-        
+            trea_col.append(obj)        
 def draw_trea():
     global trea_col
 
     for i in trea_col:
         i.draw()
-
 def remove_trea(i, col):
     col.pop(col.index(i))
-    
 def get_trea():
     global trea_col, trea_use, top_view
     for i in trea_col: 
         pos = i.pos
         temp = math.pow(math.pow(man["head"]["position"][0] - pos[0], 2) + math.pow(man["head"]["position"][1] - pos[1], 2) , 0.5)
         i.dis = temp
-
+        print(trea_col)
         if i.dis < 50:
             trea_use.append(i)
             if i.id == 1:
@@ -738,10 +713,9 @@ def get_trea():
 
 
 
-            remove_trea(i, trea_col)
-             
+            remove_trea(i, trea_col)             
 def activate_power(tid):
-    global trea_use, camera_pos, man
+    global trea_use, camera_pos, man, trea_counts
 
     for obj in trea_use:
         if obj.id == tid:
@@ -755,7 +729,10 @@ def activate_power(tid):
             trea_counts[i.id] -= 1
         
     elif i.id == 2 and  trea_counts[i.id]>0:
-        camera_pos = i.function_on(camera_pos)
+        temp = i.function_on(camera_pos)
+        if temp != None:
+            camera_pos = temp
+        
         
         if i.id == 2:
             trea_counts[i.id] -= 1
@@ -771,7 +748,8 @@ def activate_power(tid):
         if i.id == 4:
             trea_counts[i.id] -= 1
             remove_trea(i, trea_use)
-    
+
+
 def deactivate_power(tid):
     global trea_use, camera_pos, man
     
@@ -839,13 +817,12 @@ man = {
 
 
     
-
+    "type" : "player",
     "theta" : math.radians(-90),  # for movement direction
     "rot_theta" : 0, # angle of rotation about z-axis
-    "type" : "player",
     "halo" : None,
 } 
-step_size = 5
+step_size = 8
 def draw_man():
     global man, immortal, rain
     
@@ -1001,7 +978,7 @@ def spawn(obj, x, y):
 frame_count = 0
 enemy_positions = []
 enemy_paths = []  # Store paths for each enemy
-enemy_speeds = [0.7 for _ in range(3)]  # Increased speed for noticeable movement
+enemy_speeds = [0.3 for _ in range(3)]  # Increased speed for noticeable movement
 
 def enemy_hurt():
     global enemy_positions, man, life, immortal_c, enemy_halo
@@ -1020,7 +997,7 @@ def enemy_hurt():
             min_dis = temp
             enemy = i
         
-    if enemy_halo == 0:
+    if enemy_halo == 0 and man["halo"] != None:
             deactivate_power(3)
     
     
@@ -1032,27 +1009,25 @@ def enemy_hurt():
             spawn_enemies()
         
         
-        elif not immortal:
+        elif not immortal and enemy_halo <=0:
             life -= 1
             enemy_positions.pop(enemy_positions.index(enemy))
             if len(enemy_positions) == 0:
                 spawn_enemies()
 
         
-        elif enemy_halo > 0:
+        elif enemy_halo > 0 and man["halo"] != None:
             enemy_halo -= 1
             enemy_positions.pop(enemy_positions.index(enemy))
             if len(enemy_positions) == 0:
                 spawn_enemies()
         
-
 def is_valid_position(x, y, buffer=30):
     for wall in maze_wall:
         x1, y1, x2, y2 = wall
         if min(x1, x2) - buffer <= x <= max(x1, x2) + buffer and min(y1, y2) - buffer <= y <= max(y1, y2) + buffer:
             return False
     return True
-
 
 def spawn_enemies(n=3):
     global enemy_paths
@@ -1066,10 +1041,8 @@ def spawn_enemies(n=3):
             enemy_positions.append([x, y])
         attempts += 1
 
-
 def heuristic(a, b):
     return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-
 
 def get_neighbors(pos, grid_size=30):
     x, y = pos
@@ -1078,7 +1051,6 @@ def get_neighbors(pos, grid_size=30):
         (x, y + grid_size), (x, y - grid_size)
     ]
     return [(nx, ny) for nx, ny in neighbors if -800 <= nx <= 800 and -800 <= ny <= 800 and is_valid_position(nx, ny)]
-
 
 def a_star(start, goal, grid_size=30):
     start = (round(start[0] / grid_size) * grid_size, round(start[1] / grid_size) * grid_size)
@@ -1111,7 +1083,6 @@ def a_star(start, goal, grid_size=30):
 
     return []
 
-
 def update_enemy_paths():
     global frame_count
     if frame_count % 10 == 0:  
@@ -1120,7 +1091,6 @@ def update_enemy_paths():
             path = a_star((enemy_pos[0], enemy_pos[1]), player_pos)
             enemy_paths[i] = path
     frame_count += 1
-
 
 def move_enemy(enemy_idx):
     global is_top, paused
@@ -1318,7 +1288,7 @@ def mouseListener(button, state, x, y):
             
             
         
-        elif 490 < x < 520 and 120 < y < 150:
+        elif 490 < x < 520 and 120 < y < 150 and not is_top:
             restart_game()
         
 
@@ -1355,10 +1325,10 @@ def win():
     
 
 def idle():
-    global tele_update, tele_dis, tele_i1, tele_i2, immortal_c
-
+    global tele_update, tele_dis, tele_i1, tele_i2, immortal_c, immortal
+    
     enemy_hurt()
-    if immortal_c == 0:
+    if immortal_c == 0 and immortal:
         deactivate_power(1)
 
     update_enemy_paths()
